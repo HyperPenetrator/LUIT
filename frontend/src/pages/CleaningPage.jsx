@@ -18,6 +18,7 @@ export default function CleaningPage() {
   const [error, setError] = useState('')
   const [locationLoading, setLocationLoading] = useState(false)
   const [cameraActive, setCameraActive] = useState(false)
+  const [streamStarted, setStreamStarted] = useState(false)
   const videoRef = useRef(null)
   const canvasRef = useRef(null)
   const streamRef = useRef(null)
@@ -82,6 +83,8 @@ export default function CleaningPage() {
     try {
       setError('')
       console.log('📷 Starting camera...')
+      setStreamStarted(true)
+      
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'environment' }
       })
@@ -90,14 +93,24 @@ export default function CleaningPage() {
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream
-        // Give video time to start
-        setTimeout(() => {
-          console.log('✅ Setting camera active')
+        console.log('✅ Stream attached to video element')
+        
+        // Wait for video to load metadata
+        videoRef.current.onloadedmetadata = () => {
+          console.log('✅ Video metadata loaded, activating camera')
+          videoRef.current.play()
           setCameraActive(true)
-        }, 500)
+        }
+        
+        // Fallback timeout
+        setTimeout(() => {
+          console.log('⏱️  Timeout reached, activating camera anyway')
+          setCameraActive(true)
+        }, 1000)
       }
     } catch (err) {
       console.error('❌ Camera error:', err)
+      setStreamStarted(false)
       setError('Could not access camera. Please check permissions.')
       setCameraActive(false)
     }
@@ -263,7 +276,7 @@ export default function CleaningPage() {
 
             {/* Camera Section */}
             <div className="bg-white rounded-xl shadow-md p-4 mb-6">
-              {!cameraActive && (
+              {!streamStarted && (
                 <button
                   onClick={startCamera}
                   className="w-full py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold rounded-lg flex items-center justify-center gap-2 text-lg"
@@ -272,9 +285,30 @@ export default function CleaningPage() {
                 </button>
               )}
 
-              {cameraActive && (
+              {streamStarted && (
                 <div>
                   <p className="text-sm text-gray-600 text-center mb-3">Position the cleaned area in view</p>
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    className="w-full bg-black rounded-lg mb-4 border-2 border-gray-300"
+                    style={{ maxHeight: '400px', objectFit: 'cover' }}
+                  />
+                  {cameraActive && (
+                    <button
+                      onClick={captureImage}
+                      disabled={loading}
+                      className="w-full py-4 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 disabled:from-gray-400 disabled:to-gray-400 text-white font-bold rounded-lg text-lg flex items-center justify-center gap-2"
+                    >
+                      <span>📸</span> {loading ? 'Verifying...' : 'Take After Photo'}
+                    </button>
+                  )}
+                  {!cameraActive && (
+                    <p className="text-center text-gray-500 py-2">Initializing camera...</p>
+                  )}
+                </div>
+              )}
                   <video
                     ref={videoRef}
                     autoPlay
