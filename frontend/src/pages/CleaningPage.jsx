@@ -81,37 +81,58 @@ export default function CleaningPage() {
   const startCamera = async () => {
     try {
       setError('')
+      console.log('📷 Starting camera...')
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'environment' }
       })
+      console.log('✅ Stream obtained:', stream)
       streamRef.current = stream
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream
-        videoRef.current.onloadedmetadata = () => {
-          videoRef.current.play()
+        // Give video time to start
+        setTimeout(() => {
+          console.log('✅ Setting camera active')
           setCameraActive(true)
-        }
+        }, 500)
       }
     } catch (err) {
+      console.error('❌ Camera error:', err)
       setError('Could not access camera. Please check permissions.')
       setCameraActive(false)
     }
   }
 
   const captureImage = async () => {
-    if (!videoRef.current || !canvasRef.current) return
+    if (!videoRef.current || !canvasRef.current) {
+      console.error('❌ Video or canvas not ready')
+      setError('Camera not ready. Please try again.')
+      return
+    }
     
     const context = canvasRef.current.getContext('2d')
     const video = videoRef.current
     
-    canvasRef.current.width = video.videoWidth
-    canvasRef.current.height = video.videoHeight
+    console.log('📸 Video dimensions:', video.videoWidth, 'x', video.videoHeight)
     
-    context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight)
-    const imageData = canvasRef.current.toDataURL('image/jpeg', 0.8)
+    if (video.videoWidth === 0 || video.videoHeight === 0) {
+      setError('Camera still loading. Please wait a moment and try again.')
+      return
+    }
     
-    await handleVerify(imageData)
+    try {
+      canvasRef.current.width = video.videoWidth
+      canvasRef.current.height = video.videoHeight
+      
+      context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight)
+      const imageData = canvasRef.current.toDataURL('image/jpeg', 0.8)
+      
+      console.log('✅ Image captured:', imageData.length, 'bytes')
+      await handleVerify(imageData)
+    } catch (err) {
+      console.error('❌ Capture error:', err)
+      setError('Failed to capture image. Please try again.')
+    }
   }
 
   const handleVerify = async (afterImg) => {
