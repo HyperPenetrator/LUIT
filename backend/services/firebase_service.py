@@ -4,16 +4,24 @@ from config import get_settings
 import json
 import os
 
-settings = get_settings()
-
 # Initialize Firebase
 def init_firebase():
     if not firebase_admin._apps:
         try:
+            settings = get_settings()
+            
+            # Log what we received
+            print(f"📋 Firebase Project ID: {settings.firebase_project_id}")
+            print(f"📋 Firebase Client Email: {settings.firebase_client_email}")
+            
             # Check if project_id is set
             if not settings.firebase_project_id:
                 print("❌ ERROR: FIREBASE_PROJECT_ID is not set!")
-                return False
+                raise ValueError("FIREBASE_PROJECT_ID environment variable not found")
+                
+            if not settings.firebase_private_key:
+                print("❌ ERROR: FIREBASE_PRIVATE_KEY is not set!")
+                raise ValueError("FIREBASE_PRIVATE_KEY environment variable not found")
                 
             cred_dict = {
                 "type": "service_account",
@@ -35,12 +43,16 @@ def init_firebase():
             return True
         except Exception as e:
             print(f"❌ Firebase initialization failed: {str(e)}")
-            return False
+            raise
     else:
         print(f"ℹ️  Firebase already initialized")
         return True
 
-init_firebase()
+try:
+    init_firebase()
+except Exception as e:
+    print(f"⚠️  Firebase initialization error at startup: {str(e)}")
+    print("Firebase operations will fail until credentials are properly configured")
 
 def get_firestore_client():
     """Get Firestore client for database operations"""
