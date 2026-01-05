@@ -12,33 +12,16 @@ load_dotenv()
 
 app = FastAPI(title="LUIT Backend", version="1.0.0")
 
-# CORS Configuration - explicitly allow Vercel and localhost
+# CORS Configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        # Local development
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "http://localhost:5174",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:5173",
-        "http://127.0.0.1:5174",
-        # Local mobile/network
-        "http://192.168.29.84:3000",
-        "http://192.168.29.84:5173",
-        "http://192.168.29.84:5174",
-        # Vercel frontend
-        "https://luitfrontend.vercel.app",
-        # Production
-        os.getenv("FRONTEND_URL", "http://localhost:3000"),
-    ],
-    allow_origin_regex=r"(http://localhost.*|https://.*\.vercel\.app)",
+    allow_origin_regex=r"(^http://localhost.*|^https://.*\.vercel\.app.*)",
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
-logger.info("✅ CORS enabled for Vercel and localhost domains")
+logger.info("✅ CORS enabled")
 
 @app.get("/health")
 def health_check():
