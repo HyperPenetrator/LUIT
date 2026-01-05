@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useLocationStore, useAuthStore } from '../store'
-import { cleaningApi, locationApi, reportingApi } from '../api'
+import { cleaningApi, reportingApi } from '../api'
 
 export default function CleaningPage() {
   const navigate = useNavigate()
@@ -11,21 +11,27 @@ export default function CleaningPage() {
   const setLocation = useLocationStore((state) => state.setLocation)
   const { latitude, longitude } = useLocationStore()
   
-  const [stage, setStage] = useState('loading') // loading -> location -> after -> verify
   const [beforeImage, setBeforeImage] = useState(null)
+  const [afterImage, setAfterImage] = useState(null)
   const [report, setReport] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const [locationLoading, setLocationLoading] = useState(false)
-  const [cameraActive, setCameraActive] = useState(false)
-  const [streamStarted, setStreamStarted] = useState(false)
+  const [verification, setVerification] = useState(null)
+  const [verifying, setVerifying] = useState(false)
   const videoRef = useRef(null)
   const canvasRef = useRef(null)
+  const [cameraActive, setCameraActive] = useState(false)
+  const [cameraStarted, setCameraStarted] = useState(false)
   const streamRef = useRef(null)
 
+  // Load report and get location on mount
   useEffect(() => {
     fetchReport()
+    getLocation()
     
+    // Cleanup: stop camera on unmount
     return () => {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop())
@@ -35,27 +41,13 @@ export default function CleaningPage() {
 
   const fetchReport = async () => {
     try {
-      console.log('🔍 Fetching report:', reportId)
       const response = await reportingApi.getReport(reportId)
-      console.log('📦 Full response:', response)
-      console.log('📋 Response data:', response.data)
-      
-      // Handle both response formats
       const reportData = response.data.report || response.data
-      console.log('✅ Report data extracted:', reportData)
-      
-      if (!reportData) {
-        throw new Error('No report data received')
-      }
-      
       setReport(reportData)
       setBeforeImage(reportData.imageUrl)
-      console.log('📸 Image set:', reportData.imageUrl)
-      getLocation()
     } catch (err) {
-      console.error('❌ Failed to load report:', err)
-      setError('Could not load the cleanup task')
-      setStage('error')
+      console.error('Failed to load report:', err)
+      setError('Could not load cleanup task')
     }
   }
 
@@ -68,122 +60,157 @@ export default function CleaningPage() {
           setLocation(latitude, longitude, position.coords.accuracy)
           setLocationLoading(false)
           setError('')
-          setStage('after')
         },
         (err) => {
-          setError('Could not get your location. Please enable GPS.')
+          setError('Failed to get location. Please enable GPS.')
           setLocationLoading(false)
-          setStage('location_error')
-        }
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       )
+    } else {
+      setError('Geolocation not supported')
+      setLocationLoading(false)
     }
   }
 
   const startCamera = async () => {
     try {
       setError('')
-      console.log('📷 Starting camera...')
-      setStreamStarted(true)
+      setCameraStarted(true)
+      const constraints = {
+        video: {
+          facingMode: 'environment',
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        },
+        audio: false
+      }
       
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' }
-      })
-      console.log('✅ Stream obtained:', stream)
+      const stream = await navigator.mediaDevices.getUserMedia(constraints)
       streamRef.current = stream
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream
-        console.log('✅ Stream attached to video element')
-        
-        // Wait for video to load metadata
         videoRef.current.onloadedmetadata = () => {
-          console.log('✅ Video metadata loaded, activating camera')
           videoRef.current.play()
           setCameraActive(true)
         }
-        
-        // Fallback timeout
-        setTimeout(() => {
-          console.log('⏱️  Timeout reached, activating camera anyway')
-          setCameraActive(true)
-        }, 1000)
       }
     } catch (err) {
-      console.error('❌ Camera error:', err)
-      setStreamStarted(false)
-      setError('Could not access camera. Please check permissions.')
+      console.error('Camera error:', err)
+      setCameraStarted(false)
+      if (err.name === 'NotAllowedError') {
+        setError('❌ Camera permission denied. Please allow camera access in your browser settings.')
+      } else if (err.name === 'NotFoundError') {
+        setError('❌ No camera found on this device.')
+      } else if (err.name === 'NotReadableError') {
+        setError('❌ Camera is being used by another app.')
+      } else {
+        setError('❌ Cannot access camera. ' + err.message)
+      }
       setCameraActive(false)
     }
   }
 
   const captureImage = async () => {
     if (!videoRef.current || !canvasRef.current) {
-      console.error('❌ Video or canvas not ready')
-      setError('Camera not ready. Please try again.')
-      return
-    }
-    
-    const context = canvasRef.current.getContext('2d')
-    const video = videoRef.current
-    
-    console.log('📸 Video dimensions:', video.videoWidth, 'x', video.videoHeight)
-    
-    if (video.videoWidth === 0 || video.videoHeight === 0) {
-      setError('Camera still loading. Please wait a moment and try again.')
+      setError('Camera not ready. Please wait...')
       return
     }
     
     try {
-      canvasRef.current.width = video.videoWidth
-      canvasRef.current.height = video.videoHeight
+      const video = videoRef.current
+      const canvas = canvasRef.current
       
-      context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight)
-      const imageData = canvasRef.current.toDataURL('image/jpeg', 0.8)
+      canvas.width = video.videoWidth
+      canvas.height = video.videoHeight
       
-      console.log('✅ Image captured:', imageData.length, 'bytes')
-      await handleVerify(imageData)
+      if (canvas.width === 0 || canvas.height === 0) {
+        setError('Camera not fully loaded. Please try again.')
+        return
+      }
+      
+      const context = canvas.getContext('2d')
+      context.drawImage(video, 0, 0, canvas.width, canvas.height)
+      
+      let imageData = canvas.toDataURL('image/jpeg', 0.8)
+      
+      let quality = 0.8
+      while (imageData.length > 1000000 && quality > 0.3) {
+        quality -= 0.1
+        imageData = canvas.toDataURL('image/jpeg', quality)
+      }
+      
+      console.log(`📷 After image captured: ${(imageData.length / 1024).toFixed(2)} KB`)
+      
+      setAfterImage(imageData)
+      setError('')
+      setVerifying(true)
+      setVerification(null)
+
+      // Verify by comparing before and after images
+      try {
+        console.log('🔍 Verifying cleanup...')
+        const verifyResult = await cleaningApi.verifyCleaning({
+          reportId,
+          beforeImageBase64: beforeImage,
+          afterImageBase64: imageData,
+          userId: user?.id,
+          userName: user?.name || 'Anonymous',
+          userType
+        })
+        console.log('✅ Verification result:', verifyResult.data)
+        setVerification(verifyResult.data)
+
+        if (!verifyResult.data.is_cleaned) {
+          setError(verifyResult.data.message || 'Area does not appear to be cleaned')
+          setVerifying(false)
+          setAfterImage(null)
+          return
+        }
+      } catch (verifyErr) {
+        console.error('❌ Verification error:', verifyErr)
+        setError('Error verifying cleanup: ' + (verifyErr.response?.data?.detail || verifyErr.message))
+        setVerification(null)
+        setVerifying(false)
+        setAfterImage(null)
+        return
+      }
+      
+      setVerifying(false)
     } catch (err) {
       console.error('❌ Capture error:', err)
       setError('Failed to capture image. Please try again.')
     }
   }
 
-  const handleVerify = async (afterImg) => {
+  const handleSubmit = async () => {
+    if (!afterImage) {
+      setError('Please capture an after image')
+      return
+    }
+    if (!verification?.is_cleaned) {
+      setError('Image must be verified as cleaned before submitting')
+      return
+    }
+
     setLoading(true)
     try {
-      const response = await cleaningApi.verifyCleaning({
+      console.log('📤 Marking area as cleaned...')
+      const result = await cleaningApi.markCleaned({
         reportId,
         beforeImageBase64: beforeImage,
-        afterImageBase64: afterImg,
+        afterImageBase64: afterImage,
         userId: user?.id,
         userName: user?.name || 'Anonymous',
         userType
       })
-
-      if (!response.data.is_cleaned) {
-        setError(response.data.message || 'Area does not appear to be cleaned. Please try again.')
-        setCameraActive(false)
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach(track => track.stop())
-        }
-      } else {
-        // Mark as cleaned
-        await cleaningApi.markCleaned({
-          reportId,
-          beforeImageBase64: beforeImage,
-          afterImageBase64: afterImg,
-          userId: user?.id,
-          userName: user?.name || 'Anonymous',
-          userType
-        })
-        setStage('verify')
-      }
+      console.log('✅ Success:', result.data)
+      setSuccess('✅ Cleanup verified and recorded!')
+      setTimeout(() => navigate('/dashboard'), 2000)
     } catch (err) {
-      setError('Verification failed. Please try again.')
-      setCameraActive(false)
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop())
-      }
+      console.error('❌ Submit error:', err)
+      setError('Error submitting cleanup: ' + (err.response?.data?.detail || err.message))
     } finally {
       setLoading(false)
     }
@@ -210,45 +237,19 @@ export default function CleaningPage() {
           </div>
         )}
 
-        {stage === 'loading' && (
-          <div className="flex flex-col items-center justify-center py-16">
-            <div className="animate-spin mb-4">
-              <div className="text-4xl">⏳</div>
-            </div>
-            <p className="text-gray-600 text-center">Loading cleanup task...</p>
+        {success && (
+          <div className="bg-green-50 border border-green-200 text-green-700 p-4 rounded-lg mb-4">
+            {success}
           </div>
         )}
 
-        {stage === 'location_error' && (
+        {!beforeImage ? (
           <div className="text-center py-12">
-            <p className="text-6xl mb-4">📍</p>
-            <p className="text-gray-600 mb-6">We need your location to verify cleanup</p>
-            <button
-              onClick={getLocation}
-              disabled={locationLoading}
-              className="w-full py-3 bg-blue-600 text-white font-bold rounded-lg disabled:bg-gray-400"
-            >
-              {locationLoading ? 'Getting location...' : 'Enable Location'}
-            </button>
+            <p className="text-gray-600">Loading cleanup task...</p>
           </div>
-        )}
-
-        {stage === 'error' && (
-          <div className="text-center py-12">
-            <p className="text-6xl mb-4">❌</p>
-            <p className="text-gray-600 mb-6">{error}</p>
-            <button
-              onClick={() => navigate('/cleaner')}
-              className="w-full py-3 bg-blue-600 text-white font-bold rounded-lg"
-            >
-              Back to Cleanup Areas
-            </button>
-          </div>
-        )}
-
-        {stage === 'after' && beforeImage && (
-          <div>
-            {/* Before Image Card */}
+        ) : (
+          <>
+            {/* Before Image */}
             <div className="bg-white rounded-xl shadow-md p-4 mb-6 overflow-hidden">
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-2xl">📸</span>
@@ -258,9 +259,9 @@ export default function CleaningPage() {
                 src={beforeImage}
                 alt="Before"
                 className="w-full rounded-lg object-cover border-2 border-blue-200"
-                style={{ maxHeight: '280px' }}
+                style={{ maxHeight: '300px' }}
               />
-              <p className="text-sm text-gray-500 mt-3 text-center">Original report image</p>
+              <p className="text-sm text-gray-500 mt-3 text-center">Original report</p>
             </div>
 
             {/* Instructions */}
@@ -269,14 +270,14 @@ export default function CleaningPage() {
                 <span className="text-2xl">🧹</span>
                 <div>
                   <p className="font-semibold text-gray-800">Clean this area</p>
-                  <p className="text-sm text-gray-600 mt-1">Once cleaned, take a photo to prove it</p>
+                  <p className="text-sm text-gray-600 mt-1">Take a photo after cleaning to verify</p>
                 </div>
               </div>
             </div>
 
             {/* Camera Section */}
             <div className="bg-white rounded-xl shadow-md p-4 mb-6">
-              {!streamStarted && (
+              {!cameraStarted && (
                 <button
                   onClick={startCamera}
                   className="w-full py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold rounded-lg flex items-center justify-center gap-2 text-lg"
@@ -285,9 +286,9 @@ export default function CleaningPage() {
                 </button>
               )}
 
-              {streamStarted && (
+              {cameraStarted && (
                 <div>
-                  <p className="text-sm text-gray-600 text-center mb-3">Position the cleaned area in view</p>
+                  <p className="text-sm text-gray-600 text-center mb-3">Position the cleaned area</p>
                   <video
                     ref={videoRef}
                     autoPlay
@@ -295,46 +296,74 @@ export default function CleaningPage() {
                     className="w-full bg-black rounded-lg mb-4 border-2 border-gray-300"
                     style={{ maxHeight: '400px', objectFit: 'cover' }}
                   />
-                  {cameraActive && (
-                    <button
-                      onClick={captureImage}
-                      disabled={loading}
-                      className="w-full py-4 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 disabled:from-gray-400 disabled:to-gray-400 text-white font-bold rounded-lg text-lg flex items-center justify-center gap-2"
-                    >
-                      <span>📸</span> {loading ? 'Verifying...' : 'Take After Photo'}
-                    </button>
-                  )}
                   {!cameraActive && (
                     <p className="text-center text-gray-500 py-2">Initializing camera...</p>
+                  )}
+                  {cameraActive && !afterImage && (
+                    <button
+                      onClick={captureImage}
+                      disabled={verifying}
+                      className="w-full py-4 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 disabled:from-gray-400 disabled:to-gray-400 text-white font-bold rounded-lg text-lg flex items-center justify-center gap-2"
+                    >
+                      <span>📸</span> {verifying ? 'Verifying...' : 'Take After Photo'}
+                    </button>
                   )}
                 </div>
               )}
             </div>
-          </div>
-        )}
 
-        {stage === 'verify' && (
-          <div className="bg-white rounded-xl shadow-md p-8 text-center">
-            <div className="text-6xl mb-4 animate-bounce">✅</div>
-            <h2 className="text-3xl font-bold text-green-600 mb-2">Cleanup Verified!</h2>
-            <p className="text-gray-600 mb-8">Thank you for helping clean up the Brahmaputra River</p>
-            <div className="bg-gradient-to-r from-blue-50 to-green-50 rounded-lg p-4 mb-8">
-              <p className="text-sm text-gray-600 mb-2">Points Earned</p>
-              <p className="text-4xl font-bold text-green-600">+10 pts</p>
-            </div>
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="w-full py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold rounded-lg text-lg"
-            >
-              View Dashboard
-            </button>
-            <button
-              onClick={() => navigate('/cleaner')}
-              className="w-full py-3 text-blue-600 font-semibold mt-3 rounded-lg hover:bg-gray-100"
-            >
-              More Cleanup Areas
-            </button>
-          </div>
+            {/* Verification Result */}
+            {verification && (
+              <div className="bg-white rounded-xl shadow-md p-4 mb-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-3xl">{verification.is_cleaned ? '✅' : '❌'}</span>
+                  <div>
+                    <p className="font-bold text-gray-800">{verification.is_cleaned ? 'Cleanup Verified!' : 'Not Cleaned'}</p>
+                    <p className="text-sm text-gray-600">{verification.message}</p>
+                  </div>
+                </div>
+
+                {verification.is_cleaned && afterImage && (
+                  <div className="mb-4">
+                    <h3 className="font-bold text-gray-800 mb-2">After Photo</h3>
+                    <img
+                      src={afterImage}
+                      alt="After"
+                      className="w-full rounded-lg object-cover"
+                      style={{ maxHeight: '300px' }}
+                    />
+                  </div>
+                )}
+
+                {verification.is_cleaned && (
+                  <button
+                    onClick={handleSubmit}
+                    disabled={loading}
+                    className="w-full py-4 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 disabled:from-gray-400 disabled:to-gray-400 text-white font-bold rounded-lg text-lg"
+                  >
+                    {loading ? '⏳ Submitting...' : '✅ Confirm Cleanup'}
+                  </button>
+                )}
+
+                {!verification.is_cleaned && (
+                  <button
+                    onClick={() => {
+                      setAfterImage(null)
+                      setVerification(null)
+                      setCameraActive(false)
+                      setCameraStarted(false)
+                      if (streamRef.current) {
+                        streamRef.current.getTracks().forEach(track => track.stop())
+                      }
+                    }}
+                    className="w-full py-4 bg-gray-600 hover:bg-gray-700 text-white font-bold rounded-lg text-lg"
+                  >
+                    Try Again
+                  </button>
+                )}
+              </div>
+            )}
+          </>
         )}
 
         <canvas ref={canvasRef} style={{ display: 'none' }} />
