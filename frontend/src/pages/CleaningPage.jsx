@@ -26,12 +26,15 @@ export default function CleaningPage() {
 
   const fetchReport = async () => {
     try {
+      console.log('Fetching report:', reportId)
       const response = await reportingApi.getReport(reportId)
-      const report = response.data
-      setBeforeImage(report.imageUrl)
+      console.log('Report fetched:', response.data)
+      setBeforeImage(response.data.imageUrl)
       getLocation()
     } catch (err) {
-      setError('Failed to load report')
+      console.error('Failed to load report:', err.response?.data || err.message)
+      setError('Failed to load report: ' + (err.response?.data?.detail || err.message))
+      setStage('error')
     }
   }
 
@@ -134,6 +137,18 @@ export default function CleaningPage() {
         {stage === 'loading' && (
           <div className="text-center py-8">
             <p className="text-gray-600">Loading report...</p>
+          </div>
+        )}
+
+        {stage === 'error' && (
+          <div className="text-center py-8">
+            <p className="text-red-600 mb-4">{error}</p>
+            <button
+              onClick={() => navigate('/cleaner')}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold"
+            >
+              Back to Cleaner
+            </button>
           </div>
         )}
 
