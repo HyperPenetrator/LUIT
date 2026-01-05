@@ -34,13 +34,25 @@ export default function CleaningPage() {
 
   const fetchReport = async () => {
     try {
+      console.log('🔍 Fetching report:', reportId)
       const response = await reportingApi.getReport(reportId)
-      const reportData = response.data
+      console.log('📦 Full response:', response)
+      console.log('📋 Response data:', response.data)
+      
+      // Handle both response formats
+      const reportData = response.data.report || response.data
+      console.log('✅ Report data extracted:', reportData)
+      
+      if (!reportData) {
+        throw new Error('No report data received')
+      }
+      
       setReport(reportData)
       setBeforeImage(reportData.imageUrl)
+      console.log('📸 Image set:', reportData.imageUrl)
       getLocation()
     } catch (err) {
-      console.error('Failed to load report:', err)
+      console.error('❌ Failed to load report:', err)
       setError('Could not load the cleanup task')
       setStage('error')
     }
