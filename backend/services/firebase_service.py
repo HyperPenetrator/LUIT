@@ -21,7 +21,13 @@ def init_firebase():
             "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs"
         }
         cred = credentials.Certificate(cred_dict)
-        firebase_admin.initialize_app(cred)
+        # Explicitly set project_id when initializing
+        firebase_admin.initialize_app(cred, {
+            'projectId': settings.firebase_project_id
+        })
+        print(f"✅ Firebase initialized with project: {settings.firebase_project_id}")
+    else:
+        print(f"ℹ️  Firebase already initialized")
 
 init_firebase()
 
