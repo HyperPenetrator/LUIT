@@ -163,7 +163,7 @@ async def create_report(request: ReportRequest):
             "message": "Report submitted successfully",
             "reportId": report_id,
             "points": 10,
-            "imageUrl": upload_result['url']
+            "imageUrl": image_url
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
