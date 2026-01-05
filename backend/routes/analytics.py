@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from services.firebase_service import get_firestore_client
+from google.cloud.firestore import FieldFilter
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 
@@ -10,15 +11,15 @@ async def get_user_analytics(userId: str):
         db = get_firestore_client()
         
         # Count reports by user
-        reports = db.collection("reports").where("userId", "==", userId).stream()
+        reports = db.collection("reports").where(filter=FieldFilter("userId", "==", userId)).stream()
         reports_count = sum(1 for _ in reports)
         
         # Count cleanings by user
-        cleanings = db.collection("cleanings").where("userId", "==", userId).stream()
+        cleanings = db.collection("cleanings").where(filter=FieldFilter("userId", "==", userId)).stream()
         cleanings_count = sum(1 for _ in cleanings)
         
         # Calculate total points
-        cleanings_list = db.collection("cleanings").where("userId", "==", userId).stream()
+        cleanings_list = db.collection("cleanings").where(filter=FieldFilter("userId", "==", userId)).stream()
         total_points = sum(c.to_dict().get("pointsAwarded", 0) for c in cleanings_list)
         total_points += reports_count * 10  # 10 points per report
         
@@ -44,13 +45,13 @@ async def get_ngo_analytics(ngoId: str):
     try:
         db = get_firestore_client()
         
-        reports = db.collection("reports").where("userId", "==", ngoId).stream()
+        reports = db.collection("reports").where(filter=FieldFilter("userId", "==", ngoId)).stream()
         reports_count = sum(1 for _ in reports)
         
-        cleanings = db.collection("cleanings").where("userId", "==", ngoId).stream()
+        cleanings = db.collection("cleanings").where(filter=FieldFilter("userId", "==", ngoId)).stream()
         cleanings_count = sum(1 for _ in cleanings)
         
-        cleanings_list = db.collection("cleanings").where("userId", "==", ngoId).stream()
+        cleanings_list = db.collection("cleanings").where(filter=FieldFilter("userId", "==", ngoId)).stream()
         total_points = sum(c.to_dict().get("pointsAwarded", 0) for c in cleanings_list)
         total_points += reports_count * 10
         

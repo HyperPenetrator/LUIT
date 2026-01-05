@@ -93,10 +93,12 @@ async def get_available_cleanings(wasteType: str = None, userType: str = None):
     """Get available cleanings to participate in"""
     try:
         from services.firebase_service import get_firestore_client
+        from google.cloud.firestore import FieldFilter
+        
         db = get_firestore_client()
         
-        # Query active reports (status = "active")
-        query = db.collection("reports").where("status", "==", "active")
+        # Query active reports (status = "active") using filter keyword argument
+        query = db.collection("reports").where(filter=FieldFilter("status", "==", "active"))
         reports = query.stream()
         
         cleanings = []
