@@ -37,36 +37,81 @@ async def get_all_users():
     """Get all users from Firebase Authentication"""
     try:
         users_list = []
-        page = auth.list_users()
         
-        while page:
-            for user in page.users:
-                # Get activity counts from Firestore
-                reports_count = 0
-                cleanings_count = 0
-                
-                # Count reports
-                reports_ref = db.collection('reports').where('userId', '==', user.uid)
-                for _ in reports_ref.stream():
-                    reports_count += 1
-                
-                # Count cleanings
-                cleanings_ref = db.collection('cleanings').where('userId', '==', user.uid)
-                for _ in cleanings_ref.stream():
-                    cleanings_count += 1
-                
-                users_list.append({
-                    'id': user.uid,
-                    'name': user.display_name or user.email or 'Unknown',
-                    'email': user.email or '',
-                    'userType': 'individual',  # TODO: store in Firestore if needed
-                    'reportsCount': reports_count,
-                    'cleaningsCount': cleanings_count,
-                    'createdAt': user.user_metadata.creation_timestamp
-                })
+        try:
+            # Get all users from Firebase Auth
+            page = auth.list_users()
             
-            # Get next page if exists
-            page = page.get_next_page()
+            while page:
+                for user in page.users:
+                    # Get activity counts from Firestore
+                    reports_count = 0
+                    cleanings_count = 0
+                    
+                    # Count reports
+                    reports = db.collection('reports').where('userId', '==', user.uid).stream()
+                    for _ in reports:
+                        reports_count += 1
+                    
+                    # Count cleanings
+                    cleanings = db.collection('cleanings').where('userId', '==', user.uid).stream()
+                    for _ in cleanings:
+                        cleanings_count += 1
+                    
+                    users_list.append({
+                        'id': user.uid,
+                        'name': user.display_name or user.email or 'Unknown',
+                        'email': user.email or '',
+                        'userType': 'individual',
+                        'reportsCount': reports_count,
+                        'cleaningsCount': cleanings_count,
+                        'createdAt': str(user.user_metadata.creation_timestamp) if user.user_metadata else ''
+                    })
+                
+                # Get next page if exists
+                page = page.get_next_page()
+        except Exception as auth_error:
+            print(f"Auth error: {str(auth_error)}")
+            # Fallback: extract users from Firestore if Auth fails
+            users_dict = {}
+            
+            for doc in db.collection('reports').stream():
+                report_data = doc.to_dict()
+                user_id = report_data.get('userId')
+                user_email = report_data.get('userEmail', '')
+                user_name = report_data.get('userName', 'Unknown')
+                
+                if user_id and user_id not in users_dict:
+                    users_dict[user_id] = {
+                        'id': user_id,
+                        'name': user_name,
+                        'email': user_email,
+                        'userType': 'individual',
+                        'reportsCount': 0,
+                        'cleaningsCount': 0
+                    }
+                if user_id:
+                    users_dict[user_id]['reportsCount'] += 1
+            
+            for doc in db.collection('cleanings').stream():
+                cleaning_data = doc.to_dict()
+                user_id = cleaning_data.get('userId')
+                user_email = cleaning_data.get('userEmail', '')
+                user_name = cleaning_data.get('userName', 'Unknown')
+                
+                if user_id and user_id not in users_dict:
+                    users_dict[user_id] = {
+                        'id': user_id,
+                        'name': user_name,
+                        'email': user_email,
+                        'userType': 'individual',
+                        'reportsCount': 0,
+                        'cleaningsCount': 0
+                    }
+                if user_id:
+                    users_dict[user_id]['cleaningsCount'] += 1
+            
+            users_list = list(users_dict.values())
         
         return users_list
     except Exception as e:
