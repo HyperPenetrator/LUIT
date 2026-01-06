@@ -18,6 +18,7 @@ class ReportRequest(BaseModel):
     imagePublicId: Optional[str] = None
     userId: Optional[str] = None
     userName: Optional[str] = None
+    userType: Optional[str] = "individual"  # individual, ngo, or anonymous
 
 class VerifyImageRequest(BaseModel):
     image_base64: str
@@ -150,6 +151,7 @@ async def create_report(request: ReportRequest):
             "imagePublicId": image_public_id,
             "userId": request.userId,
             "userName": request.userName or "Anonymous",
+            "userType": request.userType or "individual",
             "createdAt": datetime.now().isoformat(),
             "status": "active",  # active or cleaned
             "verified": True

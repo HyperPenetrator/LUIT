@@ -6,6 +6,7 @@ import { reportingApi, locationApi } from '../api'
 export default function ReportingPage() {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
+  const userType = useAuthStore((state) => state.userType)
   const setLocation = useLocationStore((state) => state.setLocation)
   const { latitude, longitude } = useLocationStore()
   
@@ -220,7 +221,9 @@ export default function ReportingPage() {
         longitude,
         wasteType,
         imageBase64: cloudinaryUrl,
-        userId: user?.id
+        userId: user?.id,
+        userName: user?.name || 'Anonymous',
+        userType: userType || 'individual'
       })
 
       setSuccess('Report submitted successfully! You earned 10 points.')
