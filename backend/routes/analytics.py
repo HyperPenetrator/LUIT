@@ -128,11 +128,95 @@ async def get_global_analytics():
         }
 
 @router.get("/leaderboard/users")
-async def get_users_leaderboard(category: str = "overall", limit: int = 20):
-    """Get user leaderboard - overall, reporting, or cleaning"""
-    return {"leaderboard": []}
+async def get_users_leaderboard(category: str = "reporting", limit: int = 20):
+    """Get user leaderboard - reporting or cleaning"""
+    try:
+        db = get_firestore_client()
+        
+        if category == "reporting":
+            # Get all users with their reports count
+            reports = db.collection("reports").where(filter=FieldFilter("userType", "==", "individual")).stream()
+            user_stats = {}
+            
+            for report in reports:
+                data = report.to_dict()
+                user_id = data.get("userId")
+                user_name = data.get("userName", "Anonymous")
+                
+                if user_id:
+                    if user_id not in user_stats:
+                        user_stats[user_id] = {"id": user_id, "name": user_name, "points": 0, "city": ""}
+                    user_stats[user_id]["points"] += 10  # 10 points per report
+            
+            leaderboard = sorted(user_stats.values(), key=lambda x: x["points"], reverse=True)[:limit]
+            
+        elif category == "cleaning":
+            # Get all users with their cleanings points
+            cleanings = db.collection("cleanings").where(filter=FieldFilter("userType", "==", "individual")).stream()
+            user_stats = {}
+            
+            for cleaning in cleanings:
+                data = cleaning.to_dict()
+                user_id = data.get("userId")
+                user_name = data.get("userName", "Anonymous")
+                points = data.get("pointsAwarded", 0)
+                
+                if user_id:
+                    if user_id not in user_stats:
+                        user_stats[user_id] = {"id": user_id, "name": user_name, "points": 0, "city": ""}
+                    user_stats[user_id]["points"] += points
+            
+            leaderboard = sorted(user_stats.values(), key=lambda x: x["points"], reverse=True)[:limit]
+        else:
+            leaderboard = []
+        
+        return {"leaderboard": leaderboard}
+    except Exception as e:
+        print(f"Error getting leaderboard: {str(e)}")
+        return {"leaderboard": []}
 
 @router.get("/leaderboard/ngos")
-async def get_ngos_leaderboard(category: str = "overall", limit: int = 20):
-    """Get NGO leaderboard"""
-    return {"leaderboard": []}
+async def get_ngos_leaderboard(category: str = "reporting", limit: int = 20):
+    """Get NGO leaderboard - reporting or cleaning"""
+    try:
+        db = get_firestore_client()
+        
+        if category == "reporting":
+            reports = db.collection("reports").where(filter=FieldFilter("userType", "==", "ngo")).stream()
+            ngo_stats = {}
+            
+            for report in reports:
+                data = report.to_dict()
+                ngo_id = data.get("userId")
+                ngo_name = data.get("userName", "Anonymous NGO")
+                
+                if ngo_id:
+                    if ngo_id not in ngo_stats:
+                        ngo_stats[ngo_id] = {"id": ngo_id, "name": ngo_name, "points": 0, "city": ""}
+                    ngo_stats[ngo_id]["points"] += 10
+            
+            leaderboard = sorted(ngo_stats.values(), key=lambda x: x["points"], reverse=True)[:limit]
+            
+        elif category == "cleaning":
+            cleanings = db.collection("cleanings").where(filter=FieldFilter("userType", "==", "ngo")).stream()
+            ngo_stats = {}
+            
+            for cleaning in cleanings:
+                data = cleaning.to_dict()
+                ngo_id = data.get("userId")
+                ngo_name = data.get("userName", "Anonymous NGO")
+                points = data.get("pointsAwarded", 0)
+                
+                if ngo_id:
+                    if ngo_id not in ngo_stats:
+                        ngo_stats[ngo_id] = {"id": ngo_id, "name": ngo_name, "points": 0, "city": ""}
+                    ngo_stats[ngo_id]["points"] += points
+            
+            leaderboard = sorted(ngo_stats.values(), key=lambda x: x["points"], reverse=True)[:limit]
+        else:
+            leaderboard = []
+        
+        return {"leaderboard": leaderboard}
+    except Exception as e:
+        print(f"Error getting NGO leaderboard: {str(e)}")
+        return {"leaderboard": []}

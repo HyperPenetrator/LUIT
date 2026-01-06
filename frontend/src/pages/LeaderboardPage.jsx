@@ -5,7 +5,7 @@ import { analyticsApi } from '../api'
 export default function LeaderboardPage() {
   const navigate = useNavigate()
   const [category, setCategory] = useState('users') // users or ngos
-  const [type, setType] = useState('overall') // overall, reporting, cleaning
+  const [type, setType] = useState('reporting') // reporting, cleaning
   const [leaderboard, setLeaderboard] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -66,12 +66,12 @@ export default function LeaderboardPage() {
         </div>
 
         {/* Type Tabs */}
-        <div className="flex overflow-x-auto gap-2 mb-4 pb-2 -mx-4 px-4">
-          {['overall', 'reporting', 'cleaning'].map(t => (
+        <div className="flex gap-2 mb-4">
+          {['reporting', 'cleaning'].map(t => (
             <button
               key={t}
               onClick={() => setType(t)}
-              className={`px-4 py-2 rounded-full whitespace-nowrap font-semibold transition ${
+              className={`flex-1 py-2 rounded-lg font-semibold transition ${
                 type === t
                   ? 'bg-purple-600 text-white'
                   : 'bg-gray-200 text-gray-700'
