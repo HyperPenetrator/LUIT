@@ -1,4 +1,7 @@
 from math import radians, cos, sin, asin, sqrt
+import logging
+
+logger = logging.getLogger(__name__)
 
 def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """
@@ -17,12 +20,62 @@ def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
 
 async def check_duplicate_location(latitude: float, longitude: float, radius_meters: float = 100) -> dict:
     """
-    Check if a location is already reported within given radius
-    Returns: {is_duplicate: bool, nearby_reports: list}
+    Check if a location has active (not cleaned) reports within given radius
+    Returns: {is_duplicate: bool, nearby_reports: list, distance_to_closest: float}
     """
-    # This will be implemented with Firebase queries
-    # Placeholder for now
-    return {
-        'is_duplicate': False,
-        'nearby_reports': []
-    }
+    try:
+        from services.firebase_service import get_firestore_client
+        from google.cloud.firestore import FieldFilter
+        
+        db = get_firestore_client()
+        
+        # Get all ACTIVE reports (not cleaned)
+        active_reports = db.collection("reports").where(
+            filter=FieldFilter("status", "==", "active")
+        ).stream()
+        
+        nearby_reports = []
+        min_distance = float('inf')
+        
+        for report in active_reports:
+            data = report.to_dict()
+            report_lat = data.get("latitude")
+            report_lon = data.get("longitude")
+            
+            if report_lat and report_lon:
+                distance = haversine_distance(latitude, longitude, report_lat, report_lon)
+                
+                logger.info(f"📍 Checking distance to report {report.id}: {distance:.1f}m")
+                
+                if distance <= radius_meters:
+                    nearby_reports.append({
+                        "id": report.id,
+                        "distance": round(distance, 2),
+                        "wasteType": data.get("wasteType"),
+                        "latitude": report_lat,
+                        "longitude": report_lon
+                    })
+                    min_distance = min(min_distance, distance)
+        
+        is_duplicate = len(nearby_reports) > 0
+        
+        if is_duplicate:
+            logger.warning(f"⚠️  Duplicate location detected! {len(nearby_reports)} active report(s) within {radius_meters}m")
+            logger.warning(f"📏 Closest report: {min_distance:.1f}m away")
+        else:
+            logger.info(f"✅ No active reports within {radius_meters}m")
+        
+        return {
+            'is_duplicate': is_duplicate,
+            'nearby_reports': nearby_reports,
+            'distance_to_closest': round(min_distance, 2) if min_distance != float('inf') else None,
+            'radius_checked': radius_meters
+        }
+    except Exception as e:
+        logger.error(f"❌ Error checking duplicate location: {str(e)}")
+        return {
+            'is_duplicate': False,
+            'nearby_reports': [],
+            'distance_to_closest': None,
+            'radius_checked': radius_meters
+        }
