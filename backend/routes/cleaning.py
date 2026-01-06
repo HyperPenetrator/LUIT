@@ -4,6 +4,9 @@ from services.image_verification import verify_cleaning_image
 from services.cloudinary_service import upload_image_to_cloudinary, delete_image_from_cloudinary
 from services.firebase_service import get_document, update_document, add_document
 from datetime import datetime
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/cleaning", tags=["cleaning"])
 
@@ -41,9 +44,11 @@ async def mark_cleaned(request: CleaningRequest):
         # Delete before image from Cloudinary if it exists
         if report.get('imagePublicId'):
             try:
+                logger.info(f"🗑️  Deleting before image from Cloudinary: {report.get('imagePublicId')}")
                 await delete_image_from_cloudinary(report.get('imagePublicId'))
+                logger.info(f"✅ Before image deleted successfully")
             except Exception as e:
-                print(f"Warning: Could not delete before image: {str(e)}")
+                logger.error(f"❌ Could not delete before image: {str(e)}")
         
         # Calculate points based on waste type
         points_map = {
