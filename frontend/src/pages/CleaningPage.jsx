@@ -53,6 +53,28 @@ export default function CleaningPage() {
     }
   }, [])
 
+  // Recalculate distance when report loads or location changes
+  useEffect(() => {
+    if (report?.latitude && report?.longitude && latitude && longitude) {
+      const dist = calculateDistance(
+        latitude,
+        longitude,
+        report.latitude,
+        report.longitude
+      )
+      setDistance(dist)
+      
+      const withinRange = dist <= 50
+      setIsWithinRange(withinRange)
+      
+      console.log(`📍 Distance to cleanup: ${dist.toFixed(1)}m - ${withinRange ? '✅ In range' : '❌ Out of range'}`)
+      
+      if (!withinRange) {
+        setError(`⚠️ You are ${dist.toFixed(0)}m away. Get closer to the location (within 50m) to start cleaning.`)
+      }
+    }
+  }, [report, latitude, longitude])
+
   const fetchReport = async () => {
     try {
       const response = await reportingApi.getReport(reportId)
@@ -98,30 +120,12 @@ export default function CleaningPage() {
           setLocation(userLat, userLon, position.coords.accuracy)
           setLocationLoading(false)
           setError('')
-          
-          // Calculate distance to cleanup location
-          if (report?.latitude && report?.longitude) {
-            const dist = calculateDistance(
-              userLat, 
-              userLon, 
-              report.latitude, 
-              report.longitude
-            )
-            setDistance(dist)
-            
-            const withinRange = dist <= 50 // 50 meters
-            setIsWithinRange(withinRange)
-            
-            console.log(`📍 Distance to cleanup: ${dist.toFixed(1)}m - ${withinRange ? '✅ In range' : '❌ Out of range'}`)
-            
-            if (!withinRange) {
-              setError(`⚠️ You are ${dist.toFixed(0)}m away. Get closer to the location (within 50m) to start cleaning.`)
-            }
-          }
+          console.log(`📍 Location obtained: ${userLat.toFixed(4)}, ${userLon.toFixed(4)}`)
         },
         (err) => {
           setError('Failed to get location. Please enable GPS.')
           setLocationLoading(false)
+          console.error('Geolocation error:', err)
         },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       )
