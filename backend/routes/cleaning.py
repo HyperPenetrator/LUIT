@@ -38,10 +38,12 @@ async def mark_cleaned(request: CleaningRequest):
         if not report:
             return {"success": False, "message": "Report not found"}
         
-        # Upload after image to Cloudinary
-        upload_result = await upload_image_to_cloudinary(request.afterImageBase64, folder="luit/cleanings")
-        if not upload_result['success']:
-            return {"success": False, "message": "Failed to upload after image"}
+        # Delete before image from Cloudinary if it exists
+        if report.get('imagePublicId'):
+            try:
+                await delete_image_from_cloudinary(report.get('imagePublicId'))
+            except Exception as e:
+                print(f"Warning: Could not delete before image: {str(e)}")
         
         # Calculate points based on waste type
         points_map = {
@@ -53,17 +55,17 @@ async def mark_cleaned(request: CleaningRequest):
         }
         points_awarded = points_map.get(report.get('wasteType'), 10)
         
-        # Update report as cleaned - remove location and images, keep only status and points
+        # Update report as cleaned - remove location and images
         update_data = {
             "status": "cleaned",
             "cleanedBy": request.userId,
             "cleanedByName": request.userName,
             "cleanedAt": datetime.now().isoformat(),
-            "latitude": None,  # Remove location
+            "latitude": None,
             "longitude": None,
-            "imageUrl": None,  # Remove before image
+            "imageUrl": None,
             "imagePublicId": None,
-            "afterImageUrl": None,  # Remove after image
+            "afterImageUrl": None,
             "afterImagePublicId": None
         }
         update_document("reports", request.reportId, update_data)

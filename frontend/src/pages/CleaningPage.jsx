@@ -218,6 +218,10 @@ export default function CleaningPage() {
       setError('Image must be verified as cleaned before submitting')
       return
     }
+    if (loading) {
+      console.warn('⚠️ Submission already in progress')
+      return
+    }
 
     setLoading(true)
     try {
@@ -236,7 +240,6 @@ export default function CleaningPage() {
     } catch (err) {
       console.error('❌ Submit error:', err)
       setError('Error submitting cleanup: ' + (err.response?.data?.detail || err.message))
-    } finally {
       setLoading(false)
     }
   }
