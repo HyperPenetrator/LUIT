@@ -145,13 +145,13 @@ export default function MainPage() {
         {/* Join the Movement Button */}
         <button
           onClick={() => navigate('/login')}
-          className={`w-full py-5 mb-8 rounded-xl text-white font-bold text-xl transition transform hover:scale-105 active:scale-95 animate-slideUp stagger-2 animate-pulse-glow ${
+          className={`w-full py-5 mb-8 rounded-xl text-white font-bold text-xl transition transform hover:scale-105 active:scale-95 animate-slideUp stagger-2 ${
             darkMode 
               ? 'bg-gradient-to-r from-cyan-500 to-emerald-600 hover:from-cyan-600 hover:to-emerald-700' 
               : 'bg-gradient-to-r from-sky-500 to-emerald-500 hover:from-sky-600 hover:to-emerald-600'
           }`}
         >
-          🚀 Join the Movement
+          🍃 Join the Movement
         </button>
 
         {/* Encouraging Facts Section */}
