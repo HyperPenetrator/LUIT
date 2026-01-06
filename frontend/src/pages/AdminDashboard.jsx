@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import axios from 'axios'
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+import { api } from '../api'
 
 export default function AdminDashboard() {
   const navigate = useNavigate()
@@ -25,10 +23,10 @@ export default function AdminDashboard() {
     setLoading(true)
     try {
       const [reportsRes, cleaningsRes, usersRes, ngosRes] = await Promise.all([
-        axios.get(`${API_URL}/admin/reports`),
-        axios.get(`${API_URL}/admin/cleanings`),
-        axios.get(`${API_URL}/admin/users`),
-        axios.get(`${API_URL}/admin/ngos`)
+        api.get('/admin/reports'),
+        api.get('/admin/cleanings'),
+        api.get('/admin/users'),
+        api.get('/admin/ngos')
       ])
       
       setData({
@@ -52,7 +50,7 @@ export default function AdminDashboard() {
 
     setLoading(true)
     try {
-      await axios.delete(`${API_URL}/admin/clear/${type}`)
+      await api.delete(`/admin/clear/${type}`)
       setMessage(`${type} cleared successfully!`)
       fetchAllData()
       setTimeout(() => setMessage(''), 3000)
