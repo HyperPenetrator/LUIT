@@ -37,7 +37,12 @@ logger.info("✅ CORS enabled for origins: " + ", ".join(allowed_origins))
 def health_check():
     """Health check endpoint for uptime monitoring and keep-alive"""
     logger.info("🏥 Health check called")
-    return {"status": "healthy", "message": "LUIT Backend is running", "timestamp": str(__import__('datetime').datetime.utcnow())}
+    return {
+        "status": "healthy", 
+        "message": "LUIT Backend is running", 
+        "timestamp": str(__import__('datetime').datetime.utcnow()),
+        "admin_enabled": True
+    }
 
 @app.get("/")
 def root():
