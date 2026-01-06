@@ -40,16 +40,20 @@ async def get_all_users():
         
         # Get users from reports
         reports_ref = db.collection('reports')
+        report_count = 0
         for doc in reports_ref.stream():
+            report_count += 1
             report_data = doc.to_dict()
             user_id = report_data.get('userId')
             user_name = report_data.get('userName', 'Unknown')
+            
+            print(f"DEBUG: Report {report_count} - userId={user_id}, userName={user_name}")
             
             if user_id and user_id not in users_dict:
                 users_dict[user_id] = {
                     'id': user_id,
                     'name': user_name,
-                    'userType': 'individual',
+                    'userType': report_data.get('userType', 'individual'),
                     'reportsCount': 0,
                     'cleaningsCount': 0,
                     'email': report_data.get('userEmail', '')
@@ -57,9 +61,13 @@ async def get_all_users():
             if user_id:
                 users_dict[user_id]['reportsCount'] += 1
         
+        print(f"DEBUG: Total reports found: {report_count}")
+        
         # Get users from cleanings
         cleanings_ref = db.collection('cleanings')
+        cleaning_count = 0
         for doc in cleanings_ref.stream():
+            cleaning_count += 1
             cleaning_data = doc.to_dict()
             user_id = cleaning_data.get('userId')
             user_name = cleaning_data.get('userName', 'Unknown')
@@ -68,13 +76,16 @@ async def get_all_users():
                 users_dict[user_id] = {
                     'id': user_id,
                     'name': user_name,
-                    'userType': 'individual',
+                    'userType': cleaning_data.get('userType', 'individual'),
                     'reportsCount': 0,
                     'cleaningsCount': 0,
                     'email': cleaning_data.get('userEmail', '')
                 }
             if user_id:
                 users_dict[user_id]['cleaningsCount'] += 1
+        
+        print(f"DEBUG: Total cleanings found: {cleaning_count}")
+        print(f"DEBUG: Total unique users: {len(users_dict)}")
         
         return list(users_dict.values())
     except Exception as e:
