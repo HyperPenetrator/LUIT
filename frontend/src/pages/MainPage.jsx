@@ -31,11 +31,16 @@ export default function MainPage() {
   }
 
   const facts = [
-    "Every kg of plastic collected prevents marine life deaths",
-    "Clean rivers support 2 billion people worldwide",
-    "Volunteering creates a healthier ecosystem for future generations",
-    "Community cleanups inspire 5x more participation",
-    "Cleaning reduces water pollution by up to 40%"
+    "The Brahmaputra River supports 150 million people across India and Bangladesh",
+    "Every kg of plastic collected from rivers prevents marine life deaths",
+    "Brahmaputra cleanup efforts have removed over 50 tons of plastic in 2025",
+    "Clean rivers improve water quality for 2 billion people worldwide",
+    "River cleanups reduce water pollution by up to 40% in 6 months",
+    "The Brahmaputra is the 2nd largest river by discharge volume in the world",
+    "Volunteering in river cleanups creates a healthier ecosystem for future generations",
+    "Community cleanups inspire 5x more participation in environmental conservation",
+    "Protected river ecosystems support fish stocks that feed millions",
+    "Clean Brahmaputra means better drinking water for 50+ million people"
   ]
 
   return (
@@ -57,9 +62,9 @@ export default function MainPage() {
           from { opacity: 0; transform: translateY(20px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-10px); }
+        @keyframes slideInScale {
+          from { opacity: 0; transform: scale(0.9); }
+          to { opacity: 1; transform: scale(1); }
         }
         @keyframes pulse-glow {
           0%, 100% { box-shadow: 0 0 20px rgba(249, 115, 22, 0.3); }
@@ -72,7 +77,7 @@ export default function MainPage() {
         .animate-slideDown { animation: slideDown 0.6s ease-out; }
         .animate-fadeIn { animation: fadeIn 0.8s ease-in; }
         .animate-slideUp { animation: slideUp 0.6s ease-out; }
-        .animate-float { animation: float 3s ease-in-out infinite; }
+        .animate-slideInScale { animation: slideInScale 0.8s ease-out; }
         .animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
         .animate-bounce-gentle { animation: bounce-gentle 2s ease-in-out infinite; }
         .stagger-1 { animation-delay: 0.1s; }
@@ -85,7 +90,7 @@ export default function MainPage() {
       <header className={`${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} border-b shadow-sm sticky top-0 z-40 transition-colors animate-slideDown`}>
         <div className="max-w-md mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-2 animate-bounce-gentle">
-            <span className="text-3xl">💧</span>
+            <span className="text-3xl">🌍</span>
             <h1 className={`text-2xl font-bold ${darkMode ? 'text-cyan-400' : 'text-blue-600'}`}>LUIT</h1>
           </div>
           <div className="flex gap-2 items-center">
@@ -126,8 +131,8 @@ export default function MainPage() {
             ? 'bg-gradient-to-br from-cyan-900 to-blue-900' 
             : 'bg-gradient-to-br from-blue-100 to-green-100'
         } transition-colors animate-slideUp stagger-1`}>
-          <h2 className={`text-5xl font-bold mb-4 ${darkMode ? 'text-cyan-300' : 'text-blue-800'} animate-float`}>
-            💧 Clean Brahmaputra River
+          <h2 className={`text-5xl font-bold mb-4 ${darkMode ? 'text-cyan-300' : 'text-blue-800'} animate-slideInScale`}>
+            🌊 Clean Brahmaputra River
           </h2>
           <p className={`text-lg mb-6 ${darkMode ? 'text-cyan-100' : 'text-gray-700'}`}>
             Join us in cleaning and protecting the Brahmaputra River. Report garbage, participate in cleanups, and make a difference!
@@ -139,7 +144,7 @@ export default function MainPage() {
 
         {/* Join the Movement Button */}
         <button
-          onClick={() => navigate('/report')}
+          onClick={() => navigate('/login')}
           className={`w-full py-5 mb-8 rounded-xl text-white font-bold text-xl transition transform hover:scale-105 active:scale-95 animate-slideUp stagger-2 animate-pulse-glow ${
             darkMode 
               ? 'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700' 
