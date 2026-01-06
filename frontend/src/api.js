@@ -86,5 +86,7 @@ export const locationApi = {
   getNearbyReports: (latitude, longitude, radius = 100) => 
     api.get('/location/nearby-reports', { params: { latitude, longitude, radius } }),
   validateCoordinates: (latitude, longitude) => 
-    api.get('/location/validate-coordinates', { params: { latitude, longitude } })
+    api.get('/location/validate-coordinates', { params: { latitude, longitude } }),
+  checkDuplicateLocation: (latitude, longitude, radius = 100) => 
+    api.post('/location/check-duplicate', { latitude, longitude, radius })
 }

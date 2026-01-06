@@ -16,6 +16,7 @@ export default function ReportingPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [locationLoading, setLocationLoading] = useState(false)
+  const [locationConflict, setLocationConflict] = useState(null)
   const [verification, setVerification] = useState(null)
   const [verifying, setVerifying] = useState(false)
   const [cloudinaryUrl, setCloudinaryUrl] = useState(null)
@@ -49,20 +50,44 @@ export default function ReportingPage() {
     setLocationLoading(true)
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
+        async (position) => {
           const { latitude, longitude } = position.coords
           setLocation(latitude, longitude, position.coords.accuracy)
-          setLocationLoading(false)
           setError('')
+          
+          // Check for nearby active reports within 100m
+          try {
+            const checkResult = await locationApi.checkDuplicateLocation(latitude, longitude)
+            if (checkResult.data.is_duplicate) {
+              console.warn('⚠️ Location conflict detected:', checkResult.data)
+              setLocationConflict({
+                isDuplicate: true,
+                nearbyReports: checkResult.data.nearby_reports,
+                closestDistance: checkResult.data.distance_to_closest,
+                message: `Location already reported ${checkResult.data.distance_to_closest}m away`
+              })
+              setError(`❌ ${checkResult.data.nearby_reports.length} active report(s) within 100m`)
+            } else {
+              setLocationConflict(null)
+              console.log('✅ Location is clear')
+            }
+          } catch (err) {
+            console.warn('Could not check location conflict:', err)
+            setLocationConflict(null)
+          }
+          
+          setLocationLoading(false)
         },
         (err) => {
           setError('Failed to get location. Please enable GPS.')
+          setLocationConflict(null)
           setLocationLoading(false)
         },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       )
     } else {
       setError('Geolocation not supported')
+      setLocationConflict(null)
       setLocationLoading(false)
     }
   }
@@ -188,6 +213,10 @@ export default function ReportingPage() {
   }
 
   const handleSubmit = async () => {
+    if (locationConflict?.isDuplicate) {
+      setError(`❌ Cannot report here. Location already reported ${locationConflict.closestDistance}m away`)
+      return
+    }
     if (!image) {
       setError('Please capture an image')
       return
@@ -207,14 +236,6 @@ export default function ReportingPage() {
 
     setLoading(true)
     try {
-      // Check for duplicate location
-      const locationCheck = await locationApi.getNearbyReports(latitude, longitude, 100)
-      if (locationCheck.data && locationCheck.data.length > 0) {
-        setError('This location already reported. Please try another area.')
-        setLoading(false)
-        return
-      }
-
       // Create report with Cloudinary URL
       const report = await reportingApi.createReport({
         latitude,
@@ -258,18 +279,30 @@ export default function ReportingPage() {
 
       <main className="max-w-md mx-auto px-4 py-6">
         {/* Location Status */}
-        <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg mb-4">
+        <div className={`p-4 rounded-lg mb-4 border-2 transition ${
+          locationConflict?.isDuplicate 
+            ? 'bg-red-50 border-red-400' 
+            : 'bg-blue-50 border-blue-200'
+        }`}>
           <p className="text-sm text-gray-600 mb-2">📍 Your Location</p>
           {locationLoading ? (
             <p className="text-sm font-semibold text-gray-700">Getting location...</p>
           ) : latitude && longitude ? (
-            <p className="text-sm font-semibold text-gray-700">{latitude.toFixed(4)}, {longitude.toFixed(4)}</p>
+            <>
+              <p className="text-sm font-semibold text-gray-700">{latitude.toFixed(4)}, {longitude.toFixed(4)}</p>
+              {locationConflict?.isDuplicate && (
+                <p className="text-sm text-red-600 font-semibold mt-2">
+                  ⚠️ {locationConflict.message}
+                </p>
+              )}
+            </>
           ) : (
             <p className="text-sm text-red-600">Location unavailable</p>
           )}
           <button
             onClick={getLocation}
-            className="mt-2 text-xs text-blue-600 hover:text-blue-800 font-semibold"
+            className="mt-2 text-xs font-semibold hover:opacity-80"
+            style={{color: locationConflict?.isDuplicate ? '#dc2626' : '#2563eb'}}
           >
             Refresh Location
           </button>
@@ -410,10 +443,10 @@ export default function ReportingPage() {
               </button>
               <button
                 onClick={handleSubmit}
-                disabled={loading || !cloudinaryUrl || !verification?.is_garbage}
+                disabled={loading || !cloudinaryUrl || !verification?.is_garbage || locationConflict?.isDuplicate}
                 className="py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-semibold rounded-lg"
               >
-                {loading ? 'Submitting...' : verification?.is_garbage ? 'Report' : 'Verify image first'}
+                {locationConflict?.isDuplicate ? '❌ Location conflict' : loading ? 'Submitting...' : verification?.is_garbage ? 'Report' : 'Verify image first'}
               </button>
             </div>
           </div>
