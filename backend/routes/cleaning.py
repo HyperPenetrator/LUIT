@@ -44,10 +44,33 @@ async def mark_cleaned(request: CleaningRequest):
         logger.info(f"📋 Report data: imagePublicId={report.get('imagePublicId')}, imageUrl={report.get('imageUrl')}")
         
         # Delete before image from Cloudinary if it exists
-        if report.get('imagePublicId'):
+        image_public_id = report.get('imagePublicId')
+        
+        # If imagePublicId is None but imageUrl exists, extract public_id from URL
+        if not image_public_id and report.get('imageUrl'):
             try:
-                logger.info(f"🗑️  Deleting before image from Cloudinary: {report.get('imagePublicId')}")
-                await delete_image_from_cloudinary(report.get('imagePublicId'))
+                # Extract public_id from Cloudinary URL
+                # Format: https://res.cloudinary.com/{cloud}/image/upload/v{version}/{folder}/{id}.{ext}
+                url = report.get('imageUrl')
+                if 'cloudinary.com' in url and '/upload/' in url:
+                    # Get everything after /upload/v{version}/
+                    parts = url.split('/upload/')
+                    if len(parts) > 1:
+                        # Remove version (v123456/) and get path
+                        path_parts = parts[1].split('/', 1)
+                        if len(path_parts) > 1:
+                            # Get public_id without extension
+                            public_id_with_ext = path_parts[1]
+                            # Remove file extension
+                            image_public_id = public_id_with_ext.rsplit('.', 1)[0]
+                            logger.info(f"📝 Extracted public_id from URL: {image_public_id}")
+            except Exception as e:
+                logger.error(f"❌ Could not extract public_id from URL: {str(e)}")
+        
+        if image_public_id:
+            try:
+                logger.info(f"🗑️  Deleting before image from Cloudinary: {image_public_id}")
+                await delete_image_from_cloudinary(image_public_id)
                 logger.info(f"✅ Before image deleted successfully")
             except Exception as e:
                 logger.error(f"❌ Could not delete before image: {str(e)}")
