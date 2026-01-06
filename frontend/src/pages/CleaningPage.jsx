@@ -3,6 +3,18 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useLocationStore, useAuthStore } from '../store'
 import { cleaningApi, reportingApi } from '../api'
 
+// Haversine distance calculation
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+  const toRad = (deg) => (deg * Math.PI) / 180
+  const R = 6371000 // Earth's radius in meters
+  const dLat = toRad(lat2 - lat1)
+  const dLon = toRad(lon2 - lon1)
+  const a = Math.sin(dLat / 2) ** 2 + 
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return R * c // Returns distance in meters
+}
+
 export default function CleaningPage() {
   const navigate = useNavigate()
   const { reportId } = useParams()
@@ -18,6 +30,8 @@ export default function CleaningPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [locationLoading, setLocationLoading] = useState(false)
+  const [distance, setDistance] = useState(null)
+  const [isWithinRange, setIsWithinRange] = useState(false)
   const [verification, setVerification] = useState(null)
   const [verifying, setVerifying] = useState(false)
   const videoRef = useRef(null)
@@ -80,10 +94,30 @@ export default function CleaningPage() {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const { latitude, longitude } = position.coords
-          setLocation(latitude, longitude, position.coords.accuracy)
+          const { latitude: userLat, longitude: userLon } = position.coords
+          setLocation(userLat, userLon, position.coords.accuracy)
           setLocationLoading(false)
           setError('')
+          
+          // Calculate distance to cleanup location
+          if (report?.latitude && report?.longitude) {
+            const dist = calculateDistance(
+              userLat, 
+              userLon, 
+              report.latitude, 
+              report.longitude
+            )
+            setDistance(dist)
+            
+            const withinRange = dist <= 50 // 50 meters
+            setIsWithinRange(withinRange)
+            
+            console.log(`📍 Distance to cleanup: ${dist.toFixed(1)}m - ${withinRange ? '✅ In range' : '❌ Out of range'}`)
+            
+            if (!withinRange) {
+              setError(`⚠️ You are ${dist.toFixed(0)}m away. Get closer to the location (within 50m) to start cleaning.`)
+            }
+          }
         },
         (err) => {
           setError('Failed to get location. Please enable GPS.')
@@ -100,6 +134,14 @@ export default function CleaningPage() {
   const startCamera = async () => {
     try {
       setError('')
+      
+      // Check if within 50m range
+      if (!isWithinRange) {
+        setError(`❌ You must be within 50m of the cleanup location. Currently ${distance?.toFixed(0)}m away. Please move closer to proceed.`)
+        setCameraStarted(false)
+        return
+      }
+      
       setCameraStarted(true)
       const constraints = {
         video: {
@@ -295,14 +337,55 @@ export default function CleaningPage() {
               </div>
             </div>
 
+            {/* Distance Information */}
+            <div className="bg-white rounded-xl shadow-md p-4 mb-6">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">📍</span>
+                  <h3 className="font-semibold text-gray-800">Location</h3>
+                </div>
+                {distance !== null && (
+                  <div className={`text-sm font-bold px-3 py-1 rounded-full ${
+                    isWithinRange 
+                      ? 'bg-green-100 text-green-700' 
+                      : 'bg-red-100 text-red-700'
+                  }`}>
+                    {isWithinRange ? '✅' : '❌'} {distance.toFixed(1)}m
+                  </div>
+                )}
+              </div>
+              {locationLoading && (
+                <p className="text-sm text-gray-600">Getting your location...</p>
+              )}
+              {!locationLoading && distance !== null && (
+                <div>
+                  <p className="text-sm text-gray-700">
+                    {isWithinRange 
+                      ? `✅ You are within range to start cleaning (${distance.toFixed(1)}m away)`
+                      : `⚠️ You must get closer to the cleanup location. Currently ${distance.toFixed(0)}m away - need to be within 50m`
+                    }
+                  </p>
+                  {!isWithinRange && (
+                    <button
+                      onClick={getLocation}
+                      className="mt-3 w-full py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 font-semibold rounded-lg text-sm"
+                    >
+                      🔄 Refresh Location
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* Camera Section */}
             <div className="bg-white rounded-xl shadow-md p-4 mb-6">
               {!cameraStarted && (
                 <button
                   onClick={startCamera}
-                  className="w-full py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold rounded-lg flex items-center justify-center gap-2 text-lg"
+                  disabled={!isWithinRange || locationLoading}
+                  className="w-full py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed text-white font-bold rounded-lg flex items-center justify-center gap-2 text-lg"
                 >
-                  <span>📷</span> Open Camera
+                  <span>📷</span> {locationLoading ? 'Getting Location...' : 'Open Camera'}
                 </button>
               )}
 
