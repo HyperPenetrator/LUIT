@@ -1,11 +1,19 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store'
+import { analyticsApi } from '../api'
 
 export default function NgoDashboard() {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
   const logout = useAuthStore((state) => state.logout)
+  const [analytics, setAnalytics] = useState({
+    reportsCount: 0,
+    cleaningsCount: 0,
+    totalPoints: 0,
+    ngoRank: 0
+  })
+  const [loading, setLoading] = useState(false)
   
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode')
@@ -15,6 +23,29 @@ export default function NgoDashboard() {
   useEffect(() => {
     localStorage.setItem('darkMode', JSON.stringify(darkMode))
   }, [darkMode])
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchAnalytics(user.id)
+    }
+  }, [user])
+
+  const fetchAnalytics = async (ngoId) => {
+    try {
+      setLoading(true)
+      const res = await analyticsApi.getNgoAnalytics(ngoId)
+      setAnalytics({
+        reportsCount: res.data?.reportsCount || 0,
+        cleaningsCount: res.data?.cleaningsCount || 0,
+        totalPoints: res.data?.totalPoints || 0,
+        ngoRank: res.data?.ngoRank || 0
+      })
+    } catch (err) {
+      console.error('Failed to fetch NGO analytics', err.response?.data || err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleLogout = () => {
     logout()
@@ -63,6 +94,11 @@ export default function NgoDashboard() {
           <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
             Track your environmental impact and manage cleanup operations
           </p>
+          {loading && (
+            <p className={`text-sm mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              Loading your stats...
+            </p>
+          )}
         </section>
 
         {/* Stats Grid */}
@@ -71,25 +107,33 @@ export default function NgoDashboard() {
             darkMode ? 'bg-slate-800 border-cyan-700' : 'bg-white border-cyan-200 shadow-md'
           }`}>
             <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Reports Created</p>
-            <p className={`text-3xl font-bold ${darkMode ? 'text-cyan-300' : 'text-blue-600'}`}>156</p>
+            <p className={`text-3xl font-bold ${darkMode ? 'text-cyan-300' : 'text-blue-600'}`}>
+              {analytics.reportsCount.toLocaleString()}
+            </p>
           </div>
           <div className={`p-6 rounded-xl border transition transform hover:scale-105 ${
             darkMode ? 'bg-slate-800 border-cyan-700' : 'bg-white border-cyan-200 shadow-md'
           }`}>
             <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Cleanups Completed</p>
-            <p className={`text-3xl font-bold ${darkMode ? 'text-emerald-300' : 'text-emerald-700'}`}>93</p>
+            <p className={`text-3xl font-bold ${darkMode ? 'text-emerald-300' : 'text-emerald-700'}`}>
+              {analytics.cleaningsCount.toLocaleString()}
+            </p>
           </div>
           <div className={`p-6 rounded-xl border transition transform hover:scale-105 ${
             darkMode ? 'bg-slate-800 border-cyan-700' : 'bg-white border-cyan-200 shadow-md'
           }`}>
             <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Total Points</p>
-            <p className={`text-3xl font-bold ${darkMode ? 'text-cyan-300' : 'text-blue-600'}`}>4850</p>
+            <p className={`text-3xl font-bold ${darkMode ? 'text-cyan-300' : 'text-blue-600'}`}>
+              {analytics.totalPoints.toLocaleString()}
+            </p>
           </div>
           <div className={`p-6 rounded-xl border transition transform hover:scale-105 ${
             darkMode ? 'bg-slate-800 border-cyan-700' : 'bg-white border-cyan-200 shadow-md'
           }`}>
             <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Your Rank</p>
-            <p className={`text-3xl font-bold ${darkMode ? 'text-emerald-300' : 'text-emerald-700'}`}>#3</p>
+            <p className={`text-3xl font-bold ${darkMode ? 'text-emerald-300' : 'text-emerald-700'}`}>
+              #{analytics.ngoRank || 0}
+            </p>
           </div>
         </section>
 
