@@ -150,7 +150,7 @@ export default function AdminDashboard() {
           <div className="flex gap-2 items-center">
             <button
               onClick={() => setDarkMode(!darkMode)}
-              className={`px-3 py-2 rounded-lg text-lg transition transform hover:scale-110 ${
+              className={`px-2 py-1 rounded-md text-sm transition transform hover:scale-110 ${
                 darkMode 
                   ? 'bg-slate-700 text-yellow-300 hover:bg-slate-600' 
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
