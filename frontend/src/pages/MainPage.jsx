@@ -126,10 +126,10 @@ export default function MainPage() {
       {/* Main Content */}
       <main className={`flex-1 max-w-md mx-auto px-4 py-8 w-full ${showContent ? 'animate-fadeIn' : 'opacity-0'}`}>
         {/* Hero Section */}
-        <section className={`text-center mb-10 p-8 rounded-2xl ${
+        <section className={`text-center mb-10 p-8 rounded-2xl border ${
           darkMode 
-            ? 'bg-gradient-to-br from-slate-900 to-cyan-900' 
-            : 'bg-gradient-to-br from-blue-100 via-cyan-100 to-green-100'
+            ? 'bg-gradient-to-br from-slate-900 to-cyan-900 border-cyan-700' 
+            : 'bg-gradient-to-br from-blue-100 via-cyan-100 to-green-100 border-cyan-200'
         } transition-colors animate-slideUp stagger-1 transform hover:-translate-y-1 hover:shadow-xl`}>
           <h2 className={`text-5xl font-bold mb-4 ${darkMode ? 'text-cyan-300' : 'text-blue-800'} animate-slideInScale`}>
             🌊 Clean Brahmaputra River
@@ -203,8 +203,8 @@ export default function MainPage() {
         </div>
 
         {/* Analytics */}
-        <section className={`rounded-xl shadow-md p-6 grid grid-cols-2 gap-4 mb-8 ${
-          darkMode ? 'bg-gradient-to-br from-slate-800 to-slate-700' : 'bg-gradient-to-br from-white to-blue-50'
+        <section className={`rounded-xl shadow-md p-6 grid grid-cols-2 gap-4 mb-8 border ${
+          darkMode ? 'bg-gradient-to-br from-slate-800 to-slate-700 border-slate-600' : 'bg-gradient-to-br from-white to-blue-50 border-blue-100'
         } transition-colors animate-slideUp stagger-5 transform hover:-translate-y-1 hover:shadow-xl`}>
           <div className="text-center transform hover:scale-110 transition">
             <p className={`text-3xl font-bold ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>
@@ -221,7 +221,7 @@ export default function MainPage() {
         </section>
 
         {/* Info Section */}
-        <section className="mb-12">
+        <section className={`mb-12 p-6 rounded-xl border ${darkMode ? 'bg-slate-700 border-cyan-700' : 'bg-white border-cyan-200 shadow-md'}`}>
           <h3 className={`text-2xl font-bold mb-6 ${darkMode ? 'text-cyan-300' : 'text-gray-800'}`}>
             How It Works
           </h3>
