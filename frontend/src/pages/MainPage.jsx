@@ -6,7 +6,10 @@ import { analyticsApi } from '../api'
 export default function MainPage() {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
-  const [darkMode, setDarkMode] = useState(false)
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('darkMode')
+    return saved ? JSON.parse(saved) : false
+  })
   const [analytics, setAnalytics] = useState({
     totalReports: 0,
     totalCleanings: 0
@@ -17,6 +20,11 @@ export default function MainPage() {
     setShowContent(true)
     fetchGlobalAnalytics()
   }, [])
+
+  // Persist dark mode to localStorage
+  useEffect(() => {
+    localStorage.setItem('darkMode', JSON.stringify(darkMode))
+  }, [darkMode])
 
   const fetchGlobalAnalytics = async () => {
     try {

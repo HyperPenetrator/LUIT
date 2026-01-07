@@ -7,7 +7,10 @@ export default function UserDashboard() {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
   const logout = useAuthStore((state) => state.logout)
-  const [darkMode, setDarkMode] = useState(false)
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('darkMode')
+    return saved ? JSON.parse(saved) : false
+  })
   const [analytics, setAnalytics] = useState({
     reportsCount: 0,
     cleaningsCount: 0,
@@ -28,7 +31,10 @@ export default function UserDashboard() {
     fetchGlobalAnalytics()
   }, [user])
 
-  const fetchUserAnalytics = async () => {
+  // Persist dark mode to localStorage
+  useEffect(() => {
+    localStorage.setItem('darkMode', JSON.stringify(darkMode))
+  }, [darkMode])  const fetchUserAnalytics = async () => {
     try {
       const response = await analyticsApi.getUserAnalytics(user.id)
       setAnalytics(response.data)
