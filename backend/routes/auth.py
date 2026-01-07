@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, EmailStr
 from typing import Literal, Optional
 from firebase_admin import auth, firestore
+from firebase_admin.auth import UserNotFoundError
 import requests
 import os
 
@@ -34,6 +35,14 @@ async def register(request: RegisterRequest):
         if request.userType == "ngo" and not request.ngoName:
             raise HTTPException(status_code=400, detail="NGO name is required for NGO registration")
 
+        # Prevent duplicate accounts on the same email
+        try:
+            existing = auth.get_user_by_email(request.email)
+            if existing:
+                raise HTTPException(status_code=400, detail="An account with this email already exists")
+        except UserNotFoundError:
+            existing = None
+
         # Create user in Firebase Auth via REST API
         payload = {
             "email": request.email,
@@ -62,6 +71,7 @@ async def register(request: RegisterRequest):
             'email': request.email,
             'userType': request.userType,
             'name': display_name,
+            'ngoName': request.ngoName if request.userType == 'ngo' else None,
             'createdAt': firestore.SERVER_TIMESTAMP
         }
         
@@ -103,17 +113,31 @@ async def login(request: LoginRequest):
         
         user_id = auth_data.get('localId')
         id_token = auth_data.get('idToken')
-        
+
         # Get user profile from Firestore
         user_doc = db.collection('users').document(user_id).get()
-        user_data = user_doc.to_dict() if user_doc.exists else {}
-        user_type = user_data.get('userType', 'individual')
+        if not user_doc.exists:
+            raise HTTPException(status_code=401, detail="Account not found")
+        user_data = user_doc.to_dict() or {}
+        stored_user_type = user_data.get('userType')
+
+        # Enforce account type to prevent cross-login between NGO and individual
+        if stored_user_type and stored_user_type != request.userType:
+            raise HTTPException(status_code=403, detail="Account type mismatch. Use the correct portal to sign in.")
+
+        # Align custom claims with stored type if needed
+        try:
+            claims = auth.get_user(user_id).custom_claims or {}
+            if stored_user_type and claims.get('userType') != stored_user_type:
+                auth.set_custom_user_claims(user_id, {'userType': stored_user_type})
+        except Exception:
+            pass
         
-        print(f"✅ User logged in: {user_id} ({user_type})")
+        print(f"✅ User logged in: {user_id} ({stored_user_type})")
         
         return {
             "message": "Login successful",
-            "userType": user_type,
+            "userType": stored_user_type or request.userType,
             "idToken": id_token,
             "userId": user_id,
             "email": auth_data.get('email'),
