@@ -121,7 +121,7 @@ async def mark_cleaned(request: CleaningRequest):
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/available")
-async def get_available_cleanings(wasteType: str = None, userType: str = None):
+async def get_available_cleanings(wasteType: str = None, userType: str = None, userLat: float | None = None, userLon: float | None = None):
     """Get available cleanings to participate in"""
     try:
         from services.firebase_service import get_firestore_client
@@ -145,14 +145,31 @@ async def get_available_cleanings(wasteType: str = None, userType: str = None):
             if userType == "individual" and report_data.get("wasteType") == "sewage":
                 continue
             
-            # Add to cleanings list with calculated distance (placeholder)
+            # Add to cleanings list with calculated distance (uses userLat/userLon if provided)
+            def haversine(lat1, lon1, lat2, lon2):
+                from math import radians, sin, cos, sqrt, atan2
+                R = 6371.0  # Earth radius in km
+                dlat = radians(lat2 - lat1)
+                dlon = radians(lon2 - lon1)
+                a = sin(dlat/2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon/2)**2
+                c = 2 * atan2(sqrt(a), sqrt(1 - a))
+                return R * c
+
+            report_lat = report_data.get("latitude", 0)
+            report_lon = report_data.get("longitude", 0)
+            distance_km = 0
+            if userLat is not None and userLon is not None:
+                try:
+                    distance_km = haversine(float(userLat), float(userLon), float(report_lat), float(report_lon))
+                except Exception:
+                    distance_km = 0
             cleaning = {
                 "id": report.id,
                 "imageUrl": report_data.get("imageUrl", ""),
                 "wasteType": report_data.get("wasteType", "unknown"),
-                "latitude": report_data.get("latitude", 0),
-                "longitude": report_data.get("longitude", 0),
-                "distance": 0,  # Distance would be calculated from user location
+                "latitude": report_lat,
+                "longitude": report_lon,
+                "distanceKm": round(distance_km, 2),
                 "points": get_points_for_waste_type(report_data.get("wasteType", ""))
             }
             cleanings.append(cleaning)
