@@ -63,6 +63,27 @@ export default function AdminDashboard() {
     }
   }
 
+  const handleDeleteRow = async (id, type) => {
+    if (!confirm(`Are you sure you want to delete this ${type}? This action cannot be undone!`)) {
+      return
+    }
+
+    setLoading(true)
+    try {
+      const endpoint = activeTab === 'reports' ? 'report' : activeTab === 'cleanings' ? 'cleaning' : activeTab === 'users' ? 'user' : 'ngo'
+      await api.delete(`/admin/delete/${endpoint}/${id}`)
+      setMessage(`${type} deleted successfully!`)
+      fetchAllData()
+      setTimeout(() => setMessage(''), 3000)
+    } catch (error) {
+      console.error(`Failed to delete ${type}:`, error)
+      setMessage(`Failed to delete ${type}`)
+      setTimeout(() => setMessage(''), 3000)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const renderTable = () => {
     const currentData = data[activeTab]
     
@@ -80,18 +101,28 @@ export default function AdminDashboard() {
                   {key.charAt(0).toUpperCase() + key.slice(1)}
                 </th>
               ))}
+              <th className="px-4 py-3 text-left font-semibold">Actions</th>
             </tr>
           </thead>
           <tbody>
             {currentData.map((row, index) => (
-              <tr key={index} className={`border-b ${darkMode ? 'border-slate-700' : 'border-gray-200'}`}>
-                {Object.values(row).map((value, i) => (
+              <tr key={index} className={`border-b ${darkMode ? 'border-slate-700' : 'border-gray-200'} hover:${darkMode ? 'bg-slate-600' : 'bg-gray-50'}`}>
+                {Object.entries(row).map(([key, value], i) => (
                   <td key={i} className="px-4 py-3">
                     {typeof value === 'string' && value.length > 50 
                       ? value.substring(0, 50) + '...' 
                       : String(value)}
                   </td>
                 ))}
+                <td className="px-4 py-3">
+                  <button
+                    onClick={() => handleDeleteRow(row.id, activeTab.slice(0, -1))}
+                    disabled={loading}
+                    className="px-3 py-1 bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white text-xs font-semibold rounded transition transform hover:scale-105"
+                  >
+                    Delete
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>

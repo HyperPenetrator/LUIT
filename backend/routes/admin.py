@@ -351,3 +351,86 @@ async def clear_all_ngos():
         return {"message": f"Cleared {count} NGO records and {cleaning_count} cleanings"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+# Individual deletion endpoints
+@router.delete("/delete/report/{report_id}")
+async def delete_report(report_id: str):
+    """Delete a single report by ID"""
+    try:
+        db.collection('reports').document(report_id).delete()
+        return {"message": f"Deleted report {report_id}"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/delete/cleaning/{cleaning_id}")
+async def delete_cleaning(cleaning_id: str):
+    """Delete a single cleaning by ID"""
+    try:
+        db.collection('cleanings').document(cleaning_id).delete()
+        return {"message": f"Deleted cleaning {cleaning_id}"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/delete/user/{user_id}")
+async def delete_user(user_id: str):
+    """Delete all data for a single user (reports and cleanings)"""
+    try:
+        count = 0
+        
+        # Delete user's reports
+        reports = db.collection('reports').where('userId', '==', user_id).stream()
+        batch = db.batch()
+        for doc in reports:
+            batch.delete(doc.reference)
+            count += 1
+            if count % 500 == 0:
+                batch.commit()
+                batch = db.batch()
+        
+        # Delete user's cleanings
+        cleanings = db.collection('cleanings').where('userId', '==', user_id).stream()
+        for doc in cleanings:
+            batch.delete(doc.reference)
+            count += 1
+            if count % 500 == 0:
+                batch.commit()
+                batch = db.batch()
+        
+        # Delete user profile if exists
+        db.collection('users').document(user_id).delete()
+        
+        batch.commit()
+        
+        return {"message": f"Deleted user {user_id} and {count} associated records"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/delete/ngo/{ngo_id}")
+async def delete_ngo(ngo_id: str):
+    """Delete all data for a single NGO (reports and cleanings)"""
+    try:
+        count = 0
+        
+        # Delete NGO's reports
+        reports = db.collection('reports').where('userId', '==', ngo_id).stream()
+        batch = db.batch()
+        for doc in reports:
+            batch.delete(doc.reference)
+            count += 1
+            if count % 500 == 0:
+                batch.commit()
+                batch = db.batch()
+        
+        # Delete NGO's cleanings
+        cleanings = db.collection('cleanings').where('userId', '==', ngo_id).stream()
+        for doc in cleanings:
+            batch.delete(doc.reference)
+            count += 1
+            if count % 500 == 0:
+                batch.commit()
+                batch = db.batch()
+        
+        batch.commit()
+        
+        return {"message": f"Deleted NGO {ngo_id} and {count} associated records"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
