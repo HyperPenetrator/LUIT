@@ -10,6 +10,10 @@ export default function ReportingPage() {
   const setLocation = useLocationStore((state) => state.setLocation)
   const { latitude, longitude } = useLocationStore()
   
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('darkMode')
+    return saved ? JSON.parse(saved) : false
+  })
   const [wasteType, setWasteType] = useState('plastic')
   const [image, setImage] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -39,6 +43,11 @@ export default function ReportingPage() {
       }
     }
   }, [])
+
+  // Persist dark mode to localStorage
+  useEffect(() => {
+    localStorage.setItem('darkMode', JSON.stringify(darkMode))
+  }, [darkMode])
 
   // Refresh location every 30 seconds
   useEffect(() => {
@@ -264,16 +273,46 @@ export default function ReportingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm sticky top-0 z-40">
+    <div className={`min-h-screen transition-colors ${
+      darkMode 
+        ? 'bg-gradient-to-b from-slate-900 to-cyan-900' 
+        : 'bg-gradient-to-b from-blue-50 to-green-50'
+    }`}>
+      <header className={`sticky top-0 z-40 border-b transition-colors ${
+        darkMode ? 'bg-slate-800 border-cyan-700' : 'bg-white border-cyan-200 shadow-sm'
+      }`}>
         <div className="max-w-md mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-blue-600">Report Garbage</h1>
-          <button
-            onClick={() => navigate('/')}
-            className="text-gray-600 hover:text-gray-800"
-          >
-            ✕
-          </button>
+          <div className="flex items-center gap-2">
+            <span className="text-3xl">💧</span>
+            <div>
+              <h1 className={`text-2xl font-bold ${
+                darkMode ? 'text-cyan-400' : 'text-blue-600'
+              }`}>LUIT</h1>
+              <p className={`text-xs ${
+                darkMode ? 'text-gray-400' : 'text-gray-600'
+              }`}>Report Garbage</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              className={`px-2 py-1 rounded-md text-sm transition transform hover:scale-110 ${
+                darkMode 
+                  ? 'bg-slate-700 text-yellow-300 hover:bg-slate-600' 
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              {darkMode ? '☀️' : '🌙'}
+            </button>
+            <button
+              onClick={() => navigate('/')}
+              className={`text-2xl ${
+                darkMode ? 'text-gray-400 hover:text-cyan-300' : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              ✕
+            </button>
+          </div>
         </div>
       </header>
 
@@ -281,40 +320,63 @@ export default function ReportingPage() {
         {/* Location Status */}
         <div className={`p-4 rounded-lg mb-4 border-2 transition ${
           locationConflict?.isDuplicate 
-            ? 'bg-red-50 border-red-400' 
-            : 'bg-blue-50 border-blue-200'
+            ? darkMode ? 'bg-red-900 border-red-700' : 'bg-red-50 border-red-400'
+            : darkMode ? 'bg-slate-800 border-cyan-700' : 'bg-blue-50 border-blue-200'
         }`}>
-          <p className="text-sm text-gray-600 mb-2">📍 Your Location</p>
+          <p className={`text-sm mb-2 ${
+            darkMode ? 'text-gray-400' : 'text-gray-600'
+          }`}>📍 Your Location</p>
           {locationLoading ? (
-            <p className="text-sm font-semibold text-gray-700">Getting location...</p>
+            <p className={`text-sm font-semibold ${
+              darkMode ? 'text-gray-300' : 'text-gray-700'
+            }`}>Getting location...</p>
           ) : latitude && longitude ? (
             <>
-              <p className="text-sm font-semibold text-gray-700">{latitude.toFixed(4)}, {longitude.toFixed(4)}</p>
+              <p className={`text-sm font-semibold ${
+                darkMode ? 'text-gray-300' : 'text-gray-700'
+              }`}>{latitude.toFixed(4)}, {longitude.toFixed(4)}</p>
               {locationConflict?.isDuplicate && (
-                <p className="text-sm text-red-600 font-semibold mt-2">
+                <p className={`text-sm font-semibold mt-2 ${
+                  darkMode ? 'text-red-300' : 'text-red-600'
+                }`}>
                   ⚠️ {locationConflict.message}
                 </p>
               )}
             </>
           ) : (
-            <p className="text-sm text-red-600">Location unavailable</p>
+            <p className={`text-sm ${
+              darkMode ? 'text-red-300' : 'text-red-600'
+            }`}>Location unavailable</p>
           )}
           <button
             onClick={getLocation}
-            className="mt-2 text-xs font-semibold hover:opacity-80"
-            style={{color: locationConflict?.isDuplicate ? '#dc2626' : '#2563eb'}}
+            className={`mt-2 text-xs font-semibold hover:opacity-80 ${
+              locationConflict?.isDuplicate
+                ? darkMode ? 'text-red-300' : 'text-red-600'
+                : darkMode ? 'text-cyan-300' : 'text-blue-600'
+            }`}
           >
             Refresh Location
           </button>
         </div>
 
         {/* Error/Success */}
-        {error && <div className="bg-red-100 text-red-700 p-3 rounded-lg mb-4 text-sm">{error}</div>}
-        {success && <div className="bg-green-100 text-green-700 p-3 rounded-lg mb-4 text-sm">{success}</div>}
+        {error && (
+          <div className={`p-3 rounded-lg mb-4 text-sm ${
+            darkMode ? 'bg-red-900 text-red-200' : 'bg-red-100 text-red-700'
+          }`}>{error}</div>
+        )}
+        {success && (
+          <div className={`p-3 rounded-lg mb-4 text-sm ${
+            darkMode ? 'bg-green-900 text-green-200' : 'bg-green-100 text-green-700'
+          }`}>{success}</div>
+        )}
 
         {!user && (
-          <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg mb-4">
-            <p className="text-sm text-yellow-800">
+          <div className={`border p-4 rounded-lg mb-4 ${
+            darkMode ? 'bg-yellow-900 border-yellow-700 text-yellow-200' : 'bg-yellow-50 border-yellow-200 text-yellow-800'
+          }`}>
+            <p className="text-sm">
               💡 <strong>Tip:</strong> Log in to earn points and get recognized on the leaderboard!
             </p>
           </div>
@@ -322,11 +384,17 @@ export default function ReportingPage() {
 
         {/* Waste Type Selection */}
         <div className="mb-6">
-          <label className="block text-sm font-semibold text-gray-800 mb-2">Waste Type</label>
+          <label className={`block text-sm font-semibold mb-2 ${
+            darkMode ? 'text-gray-300' : 'text-gray-800'
+          }`}>Waste Type</label>
           <select
             value={wasteType}
             onChange={(e) => setWasteType(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+            className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+              darkMode 
+                ? 'bg-slate-700 border-cyan-700 text-white focus:ring-cyan-600' 
+                : 'bg-white border-gray-300 text-gray-900 focus:ring-blue-600'
+            }`}
           >
             <option value="plastic">🔵 Plastic Waste</option>
             <option value="organic">🟢 Organic Waste</option>
@@ -341,16 +409,24 @@ export default function ReportingPage() {
           <div>
             {!cameraStarted ? (
               <div className="space-y-4">
-                <div className="bg-blue-50 border border-blue-200 p-6 rounded-lg text-center">
-                  <p className="text-lg font-semibold text-blue-800 mb-2">📷 Ready to Capture?</p>
-                  <p className="text-sm text-blue-600 mb-4">Click the button below to open your camera</p>
+                <div className={`border p-6 rounded-lg text-center ${
+                  darkMode ? 'bg-slate-800 border-cyan-700' : 'bg-blue-50 border-blue-200'
+                }`}>
+                  <p className={`text-lg font-semibold mb-2 ${
+                    darkMode ? 'text-cyan-300' : 'text-blue-800'
+                  }`}>📷 Ready to Capture?</p>
+                  <p className={`text-sm mb-4 ${
+                    darkMode ? 'text-gray-400' : 'text-blue-600'
+                  }`}>Click the button below to open your camera</p>
                 </div>
                 <button
                   onClick={() => {
                     setCameraStarted(true)
                     startCamera()
                   }}
-                  className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-lg"
+                  className={`w-full py-3 text-white font-bold rounded-lg text-lg ${
+                    darkMode ? 'bg-cyan-600 hover:bg-cyan-700' : 'bg-blue-600 hover:bg-blue-700'
+                  }`}
                 >
                   📱 Open Camera
                 </button>
@@ -358,8 +434,12 @@ export default function ReportingPage() {
             ) : (
               <div>
                 {!cameraActive && (
-                  <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg mb-4 text-center">
-                    <p className="text-sm text-yellow-700">📷 Requesting camera access...</p>
+                  <div className={`border p-4 rounded-lg mb-4 text-center ${
+                    darkMode ? 'bg-yellow-900 border-yellow-700' : 'bg-yellow-50 border-yellow-200'
+                  }`}>
+                    <p className={`text-sm ${
+                      darkMode ? 'text-yellow-200' : 'text-yellow-700'
+                    }`}>📷 Requesting camera access...</p>
                   </div>
                 )}
                 <video
@@ -406,19 +486,29 @@ export default function ReportingPage() {
 
             {/* Verification Result */}
             {verifying && (
-              <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg mb-4 text-center">
-                <p className="text-sm text-blue-700 font-semibold">🔍 Verifying image...</p>
+              <div className={`border p-4 rounded-lg mb-4 text-center ${
+                darkMode ? 'bg-slate-800 border-cyan-700' : 'bg-blue-50 border-blue-200'
+              }`}>
+                <p className={`text-sm font-semibold ${
+                  darkMode ? 'text-cyan-300' : 'text-blue-700'
+                }`}>🔍 Verifying image...</p>
               </div>
             )}
 
             {verification && (
               <div className={`border p-4 rounded-lg mb-4 ${
-                verification.is_garbage ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+                verification.is_garbage 
+                  ? darkMode ? 'bg-green-900 border-green-700' : 'bg-green-50 border-green-200'
+                  : darkMode ? 'bg-red-900 border-red-700' : 'bg-red-50 border-red-200'
               }`}>
-                <p className="text-sm font-semibold text-gray-800 mb-1">
+                <p className={`text-sm font-semibold mb-1 ${
+                  darkMode ? 'text-gray-300' : 'text-gray-800'
+                }`}>
                   {verification.is_garbage ? '✅ Garbage detected' : '❌ No garbage detected'}
                 </p>
-                <p className="text-sm text-gray-700">{verification.message}</p>
+                <p className={`text-sm ${
+                  darkMode ? 'text-gray-400' : 'text-gray-700'
+                }`}>{verification.message}</p>
               </div>
             )}
 
@@ -454,6 +544,19 @@ export default function ReportingPage() {
 
         <canvas ref={canvasRef} style={{ display: 'none' }} />
       </main>
+
+      {/* Footer */}
+      <footer className={`border-t mt-12 py-6 text-center transition-colors ${
+        darkMode ? 'border-slate-700 bg-slate-800' : 'border-gray-200 bg-white'
+      }`}>
+        <p className={`text-sm ${
+          darkMode ? 'text-gray-400' : 'text-gray-600'
+        }`}>
+          Made with 💙 by <span className={`font-bold ${
+            darkMode ? 'text-cyan-400' : 'text-blue-600'
+          }`}>LuitLabs</span>
+        </p>
+      </footer>
     </div>
   )
 }
