@@ -4,7 +4,10 @@ import { api } from '../api'
 
 export default function AdminDashboard() {
   const navigate = useNavigate()
-  const [darkMode, setDarkMode] = useState(false)
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('darkMode')
+    return saved ? JSON.parse(saved) : false
+  })
   const [activeTab, setActiveTab] = useState('reports')
   const [data, setData] = useState({
     reports: [],
@@ -14,6 +17,10 @@ export default function AdminDashboard() {
   })
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
+
+  useEffect(() => {
+    localStorage.setItem('darkMode', JSON.stringify(darkMode))
+  }, [darkMode])
 
   useEffect(() => {
     fetchAllData()
@@ -141,10 +148,10 @@ export default function AdminDashboard() {
       <header className={`${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} border-b shadow-sm sticky top-0 z-40 transition-colors`}>
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <span className="text-3xl">🔒</span>
+            <span className="text-3xl">�</span>
             <div>
-              <h1 className={`text-2xl font-bold ${darkMode ? 'text-red-400' : 'text-red-600'}`}>Admin Panel</h1>
-              <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Database Management</p>
+              <h1 className={`text-2xl font-bold ${darkMode ? 'text-red-400' : 'text-red-600'}`}>LUIT Admin</h1>
+              <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>🔒 Database Management</p>
             </div>
           </div>
           <div className="flex gap-2 items-center">
@@ -248,7 +255,9 @@ export default function AdminDashboard() {
       {/* Footer */}
       <footer className={`border-t ${darkMode ? 'border-slate-700 bg-slate-800' : 'border-gray-200 bg-white'} py-6 text-center transition-colors`}>
         <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-          🔐 Admin Panel - Handle with care
+          Made with 💙 by <span className={`font-bold ${
+            darkMode ? 'text-cyan-400' : 'text-blue-600'
+          }`}>LuitLabs</span>
         </p>
       </footer>
     </div>
