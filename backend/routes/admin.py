@@ -252,44 +252,60 @@ async def clear_all_cleanings():
 
 @router.delete("/clear/users")
 async def clear_all_users():
-    """Delete all user data from reports and reset cleanings"""
+    """Delete all user documents from Firestore and related user data"""
     try:
-        count = 0
-        
-        # Delete all reports
+        # 1) Delete all documents in 'users' collection
+        users_ref = db.collection('users')
+        users_batch = db.batch()
+        users_count = 0
+
+        for doc in users_ref.stream():
+            users_batch.delete(doc.reference)
+            users_count += 1
+            if users_count % 500 == 0:
+                users_batch.commit()
+                users_batch = db.batch()
+
+        users_batch.commit()
+
+        # 2) Delete all non-NGO reports
         reports_ref = db.collection('reports')
-        batch = db.batch()
-        
+        reports_batch = db.batch()
+        reports_count = 0
+
         for doc in reports_ref.stream():
             report_data = doc.to_dict()
-            if report_data.get('userType') != 'ngo':  # Skip NGO reports
-                batch.delete(doc.reference)
-                count += 1
-                
-                if count % 500 == 0:
-                    batch.commit()
-                    batch = db.batch()
-        
-        batch.commit()
-        
-        # Delete user cleanings and reset points
+            if report_data.get('userType') != 'ngo':
+                reports_batch.delete(doc.reference)
+                reports_count += 1
+                if reports_count % 500 == 0:
+                    reports_batch.commit()
+                    reports_batch = db.batch()
+
+        reports_batch.commit()
+
+        # 3) Delete all non-NGO cleanings
         cleanings_ref = db.collection('cleanings')
-        cleaning_batch = db.batch()
-        cleaning_count = 0
-        
+        cleanings_batch = db.batch()
+        cleanings_count = 0
+
         for doc in cleanings_ref.stream():
             cleaning_data = doc.to_dict()
-            if cleaning_data.get('userType') != 'ngo':  # Skip NGO cleanings
-                cleaning_batch.delete(doc.reference)
-                cleaning_count += 1
-                
-                if cleaning_count % 500 == 0:
-                    cleaning_batch.commit()
-                    cleaning_batch = db.batch()
-        
-        cleaning_batch.commit()
-        
-        return {"message": f"Cleared {count} user records and {cleaning_count} cleanings"}
+            if cleaning_data.get('userType') != 'ngo':
+                cleanings_batch.delete(doc.reference)
+                cleanings_count += 1
+                if cleanings_count % 500 == 0:
+                    cleanings_batch.commit()
+                    cleanings_batch = db.batch()
+
+        cleanings_batch.commit()
+
+        return {
+            "message": (
+                f"Cleared {users_count} user profiles, "
+                f"{reports_count} reports, {cleanings_count} cleanings"
+            )
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
