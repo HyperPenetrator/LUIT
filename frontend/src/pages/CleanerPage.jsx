@@ -29,10 +29,30 @@ export default function CleanerPage() {
     try {
       const response = await cleaningApi.getAvailableCleanings(selectedTab, userType)
       console.log('Cleanings response:', response.data)
-      setCleanings(response.data.cleanings || [])
-      if (!response.data.cleanings || response.data.cleanings.length === 0) {
-        console.log('No cleanings found for wasteType:', selectedTab)
-      }
+        const availableCleanings = response.data.cleanings || []
+      
+        // Validate that each cleaning still exists (report wasn't deleted)
+        const validCleanings = []
+        for (const cleaning of availableCleanings) {
+          try {
+            // Try to fetch the report to verify it exists
+            await import('../api').then(module => module.reportingApi.getReport(cleaning.id))
+            validCleanings.push(cleaning)
+          } catch (err) {
+            if (err.response?.status === 404) {
+              console.log(`⚠️  Cleaning ${cleaning.id} no longer exists (report deleted)`)
+              // Skip this cleaning as the report was deleted
+            } else {
+              // If it's a different error, still include it (network error, etc)
+              validCleanings.push(cleaning)
+            }
+          }
+        }
+      
+        setCleanings(validCleanings)
+        if (validCleanings.length === 0 && availableCleanings.length > 0) {
+          console.log('All cleanings were deleted')
+        }
     } catch (err) {
       console.error('Failed to fetch cleanings:', err.response?.data || err.message)
     } finally {
@@ -42,6 +62,23 @@ export default function CleanerPage() {
 
   const wasteTypes = ['plastic', 'organic', 'mixed', 'toxic']
   if (userType === 'ngo') wasteTypes.push('sewage')
+
+    const handleCleanClick = async (cleaningId) => {
+      try {
+        // Verify the report still exists before navigating
+        const { reportingApi } = await import('../api')
+        await reportingApi.getReport(cleaningId)
+        navigate(`/cleaning/${cleaningId}`)
+      } catch (err) {
+        if (err.response?.status === 404) {
+          alert('⚠️ This cleanup task no longer exists. It may have been deleted by an admin.')
+          // Refresh the list to remove this item
+          await fetchCleanings()
+        } else {
+          alert('Error verifying cleanup task. Please try again.')
+        }
+      }
+    }
 
   return (
     <div className={`min-h-screen flex flex-col transition-colors ${
@@ -148,7 +185,7 @@ export default function CleanerPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <button
-                      onClick={() => navigate(`/cleaning/${cleaning.id}`)}
+                        onClick={() => handleCleanClick(cleaning.id)}
                       className={`py-2 text-white font-semibold rounded-lg text-sm ${
                         darkMode ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-green-600 hover:bg-green-700'
                       }`}
