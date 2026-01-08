@@ -93,13 +93,24 @@ async def get_all_ngos():
 
 @router.delete("/clear/reports")
 async def clear_all_reports():
-    """Delete all reports from database"""
+    """Delete all reports from database and their images from Cloudinary"""
     try:
+        from services.cloudinary_service import delete_image_from_cloudinary
         reports_ref = db.collection('reports')
         batch = db.batch()
         count = 0
         
         for doc in reports_ref.stream():
+            report_data = doc.to_dict()
+            public_id = report_data.get('public_id')
+            
+            # Delete image from Cloudinary if public_id exists
+            if public_id:
+                try:
+                    await delete_image_from_cloudinary(public_id)
+                except Exception as img_err:
+                    print(f"⚠️  Could not delete image {public_id}: {str(img_err)}")
+            
             batch.delete(doc.reference)
             count += 1
             
@@ -109,7 +120,7 @@ async def clear_all_reports():
                 batch = db.batch()
         
         batch.commit()
-        return {"message": f"Cleared {count} reports"}
+        return {"message": f"Cleared {count} reports and their images"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -174,8 +185,10 @@ async def clear_all_cleanings():
 
 @router.delete("/clear/users")
 async def clear_all_users():
-    """Delete all user documents from Firestore and related user data"""
+    """Delete all user documents from Firestore and related user data and images"""
     try:
+        from services.cloudinary_service import delete_image_from_cloudinary
+        
         # 1) Delete all documents in 'users' collection
         users_ref = db.collection('users')
         users_batch = db.batch()
@@ -190,7 +203,7 @@ async def clear_all_users():
 
         users_batch.commit()
 
-        # 2) Delete all non-NGO reports
+        # 2) Delete all non-NGO reports and their images
         reports_ref = db.collection('reports')
         reports_batch = db.batch()
         reports_count = 0
@@ -198,6 +211,13 @@ async def clear_all_users():
         for doc in reports_ref.stream():
             report_data = doc.to_dict()
             if report_data.get('userType') != 'ngo':
+                public_id = report_data.get('public_id')
+                if public_id:
+                    try:
+                        await delete_image_from_cloudinary(public_id)
+                    except Exception as img_err:
+                        print(f"⚠️  Could not delete image {public_id}: {str(img_err)}")
+                
                 reports_batch.delete(doc.reference)
                 reports_count += 1
                 if reports_count % 500 == 0:
@@ -225,7 +245,7 @@ async def clear_all_users():
         return {
             "message": (
                 f"Cleared {users_count} user profiles, "
-                f"{reports_count} reports, {cleanings_count} cleanings"
+                f"{reports_count} reports with images, {cleanings_count} cleanings"
             )
         }
     except Exception as e:
@@ -233,17 +253,26 @@ async def clear_all_users():
 
 @router.delete("/clear/ngos")
 async def clear_all_ngos():
-    """Delete all NGO data from reports and cleanings"""
+    """Delete all NGO data from reports and cleanings, and their images"""
     try:
+        from services.cloudinary_service import delete_image_from_cloudinary
+        
         count = 0
         
-        # Delete all NGO reports
+        # Delete all NGO reports and their images
         reports_ref = db.collection('reports')
         batch = db.batch()
         
         for doc in reports_ref.stream():
             report_data = doc.to_dict()
             if report_data.get('userType') == 'ngo':
+                public_id = report_data.get('public_id')
+                if public_id:
+                    try:
+                        await delete_image_from_cloudinary(public_id)
+                    except Exception as img_err:
+                        print(f"⚠️  Could not delete image {public_id}: {str(img_err)}")
+                
                 batch.delete(doc.reference)
                 count += 1
                 
@@ -270,16 +299,34 @@ async def clear_all_ngos():
         
         cleaning_batch.commit()
         
-        return {"message": f"Cleared {count} NGO records and {cleaning_count} cleanings"}
+        return {"message": f"Cleared {count} NGO records with images and {cleaning_count} cleanings"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 # Individual deletion endpoints
 @router.delete("/delete/report/{report_id}")
 async def delete_report(report_id: str):
-    """Delete a single report by ID"""
+    """Delete a single report by ID and its associated image from Cloudinary"""
     try:
+        # Get report data to retrieve public_id before deletion
+        report_doc = db.collection('reports').document(report_id).get()
+        if report_doc.exists:
+            report_data = report_doc.to_dict()
+            public_id = report_data.get('public_id')
+            
+            # Delete image from Cloudinary if public_id exists
+            if public_id:
+                try:
+                    from services.cloudinary_service import delete_image_from_cloudinary
+                    print(f"🗑️  Deleting image with public_id: {public_id}")
+                    await delete_image_from_cloudinary(public_id)
+                    print(f"✅ Image deleted successfully")
+                except Exception as img_err:
+                    print(f"⚠️  Could not delete image: {str(img_err)}")
+                    # Continue with report deletion even if image delete fails
+        
+        # Delete the report from Firestore
         db.collection('reports').document(report_id).delete()
-        return {"message": f"Deleted report {report_id}"}
+        return {"message": f"Deleted report {report_id} and associated image"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

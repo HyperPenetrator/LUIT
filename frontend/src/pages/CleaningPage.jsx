@@ -73,13 +73,13 @@ export default function CleaningPage() {
       )
       setDistance(dist)
       
-      const withinRange = dist <= 50
+      const withinRange = dist <= 150
       setIsWithinRange(withinRange)
       
       console.log(`📍 Distance to cleanup: ${dist.toFixed(1)}m - ${withinRange ? '✅ In range' : '❌ Out of range'}`)
       
       if (!withinRange) {
-        setError(`⚠️ You are ${dist.toFixed(0)}m away. Get closer to the location (within 50m) to start cleaning.`)
+        setError(`⚠️ You are ${dist.toFixed(0)}m away. Get closer to the location (within 150m) to start cleaning.`)
       }
     }
   }, [report, latitude, longitude])
@@ -88,8 +88,22 @@ export default function CleaningPage() {
     try {
       const response = await reportingApi.getReport(reportId)
       const reportData = response.data.report || response.data
+      
+      // Check if report exists and has required data
+      if (!reportData || !reportData.id) {
+        setError('❌ This cleanup task no longer exists. It may have been deleted by an admin.')
+        setReport(null)
+        return
+      }
+      
       setReport(reportData)
       setBeforeImage(reportData.imageUrl)
+      
+      // Check if image URL is valid
+      if (!reportData.imageUrl) {
+        setError('⚠️ Image for this cleanup task is no longer available.')
+        return
+      }
       
       // Convert image URL to base64
       try {
@@ -116,7 +130,12 @@ export default function CleaningPage() {
       }
     } catch (err) {
       console.error('Failed to load report:', err)
-      setError('Could not load cleanup task')
+      if (err.response?.status === 404) {
+        setError('❌ This cleanup task no longer exists. It may have been deleted by an admin.')
+      } else {
+        setError('Could not load cleanup task')
+      }
+      setReport(null)
     }
   }
 
@@ -148,9 +167,9 @@ export default function CleaningPage() {
     try {
       setError('')
       
-      // Check if within 50m range
+      // Check if within 150m range
       if (!isWithinRange) {
-        setError(`❌ You must be within 50m of the cleanup location. Currently ${distance?.toFixed(0)}m away. Please move closer to proceed.`)
+        setError(`❌ You must be within 150m of the cleanup location. Currently ${distance?.toFixed(0)}m away. Please move closer to proceed.`)
         setCameraStarted(false)
         return
       }
@@ -429,7 +448,7 @@ export default function CleaningPage() {
                   }`}>
                     {isWithinRange 
                       ? `✅ You are within range to start cleaning (${distance.toFixed(1)}m away)`
-                      : `⚠️ You must get closer to the cleanup location. Currently ${distance.toFixed(0)}m away - need to be within 50m`
+                      : `⚠️ You must get closer to the cleanup location. Currently ${distance.toFixed(0)}m away - need to be within 150m`
                     }
                   </p>
                   {!isWithinRange && (
