@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useLocationStore, useAuthStore } from '../store'
 import { cleaningApi, reportingApi } from '../api'
-import WaterRippleAnimation from '../components/WaterRippleAnimation'
 
 // Haversine distance calculation
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -39,7 +38,6 @@ export default function CleaningPage() {
   const [isWithinRange, setIsWithinRange] = useState(false)
   const [verification, setVerification] = useState(null)
   const [verifying, setVerifying] = useState(false)
-  const [showAnimation, setShowAnimation] = useState(false)
   const videoRef = useRef(null)
   const canvasRef = useRef(null)
   const [cameraActive, setCameraActive] = useState(false)
@@ -293,15 +291,11 @@ export default function CleaningPage() {
         userName: user?.name || 'Anonymous',
         userType
       })
-      setShowAnimation(true)
+      navigate('/cleaner')
     } catch (err) {
       setError('Error submitting cleanup: ' + (err.response?.data?.detail || err.message))
       setLoading(false)
     }
-  }
-
-  const handleAnimationComplete = () => {
-    navigate('/cleaner')
   }
 
   return (
@@ -310,7 +304,6 @@ export default function CleaningPage() {
         ? 'bg-gradient-to-b from-slate-900 to-cyan-900' 
         : 'bg-gradient-to-b from-blue-50 to-green-50'
     }`}>
-      {showAnimation && <WaterRippleAnimation onComplete={handleAnimationComplete} />}
       <header className={`sticky top-0 z-40 border-b transition-colors ${
         darkMode ? 'bg-slate-800 border-cyan-700' : 'bg-white border-cyan-200 shadow-sm'
       }`}>
