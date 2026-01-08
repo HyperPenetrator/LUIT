@@ -150,7 +150,9 @@ export default function CleanerPage() {
           </div>
         ) : (
           <div className="grid gap-4">
-            {cleanings.map(cleaning => (
+            {cleanings
+              .filter(c => !!c.imageUrl) // extra guard against empty images
+              .map(cleaning => (
               <div
                 key={cleaning.id}
                 className={`rounded-lg overflow-hidden transition transform hover:scale-105 border ${
@@ -161,6 +163,11 @@ export default function CleanerPage() {
                   src={cleaning.imageUrl}
                   alt="Garbage area"
                   className="w-full h-48 object-cover"
+                  onError={(e) => {
+                    // Hide cards with broken images
+                    e.currentTarget.onerror = null
+                    e.currentTarget.closest('div').style.display = 'none'
+                  }}
                 />
                 <div className="p-4">
                   <div className="flex justify-between items-start mb-2">
@@ -170,7 +177,14 @@ export default function CleanerPage() {
                       }`}>{cleaning.wasteType}</p>
                       <p className={`text-sm ${
                         darkMode ? 'text-gray-400' : 'text-gray-600'
-                      }`}>📍 {cleaning.distance}m away</p>
+                      }`}>
+                        {(() => {
+                          const km = Number(cleaning.distanceKm ?? cleaning.distance ?? 0)
+                          if (!isFinite(km)) return '📍 distance unavailable'
+                          if (km >= 1) return `📍 ${km.toFixed(2)} km away`
+                          return `📍 ${Math.max(1, Math.round(km * 1000))} m away`
+                        })()}
+                      </p>
                     </div>
                     <div className="text-right">
                       <p className={`font-bold ${
