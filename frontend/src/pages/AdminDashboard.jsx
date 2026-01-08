@@ -93,19 +93,80 @@ export default function AdminDashboard() {
 
   const renderTable = () => {
     const currentData = data[activeTab]
-    
+
     if (!currentData || currentData.length === 0) {
       return <div className="text-center py-8 text-gray-500">No data available</div>
     }
+
+    // Define stable columns per tab to avoid misalignment
+    const baseColumns = {
+      reports: [
+        { key: 'id', label: 'Id' },
+        { key: 'imageUrl', label: 'ImageUrl' },
+        { key: 'imagePublicId', label: 'ImagePublicId' },
+        { key: 'afterImageUrl', label: 'AfterImageUrl' },
+        { key: 'afterImagePublicId', label: 'AfterImagePublicId' },
+        { key: 'latitude', label: 'Latitude' },
+        { key: 'longitude', label: 'Longitude' },
+        { key: 'status', label: 'Status' },
+        { key: 'verified', label: 'Verified' },
+        { key: 'wasteType', label: 'WasteType' },
+        { key: 'userId', label: 'UserId' },
+        { key: 'userName', label: 'UserName' },
+        { key: 'userType', label: 'UserType' },
+        { key: 'cleanedBy', label: 'CleanedBy' },
+        { key: 'cleanedByName', label: 'CleanedByName' },
+        { key: 'createdAt', label: 'CreatedAt' },
+        { key: 'cleanedAt', label: 'CleanedAt' }
+      ],
+      cleanings: [
+        { key: 'id', label: 'Id' },
+        { key: 'reportId', label: 'ReportId' },
+        { key: 'userId', label: 'UserId' },
+        { key: 'userName', label: 'UserName' },
+        { key: 'userType', label: 'UserType' },
+        { key: 'latitude', label: 'Latitude' },
+        { key: 'longitude', label: 'Longitude' },
+        { key: 'status', label: 'Status' },
+        { key: 'createdAt', label: 'CreatedAt' },
+        { key: 'cleanedAt', label: 'CleanedAt' },
+        { key: 'afterImageUrl', label: 'AfterImageUrl' },
+        { key: 'afterImagePublicId', label: 'AfterImagePublicId' }
+      ],
+      users: [
+        { key: 'id', label: 'Id' },
+        { key: 'name', label: 'Name' },
+        { key: 'email', label: 'Email' },
+        { key: 'userType', label: 'UserType' },
+        { key: 'reportsCount', label: 'ReportsCount' },
+        { key: 'cleaningsCount', label: 'CleaningsCount' },
+        { key: 'createdAt', label: 'CreatedAt' }
+      ],
+      ngos: [
+        { key: 'id', label: 'Id' },
+        { key: 'name', label: 'Name' },
+        { key: 'email', label: 'Email' },
+        { key: 'userType', label: 'UserType' },
+        { key: 'reportsCount', label: 'ReportsCount' },
+        { key: 'cleaningsCount', label: 'CleaningsCount' },
+        { key: 'createdAt', label: 'CreatedAt' }
+      ]
+    }
+
+    const columns = baseColumns[activeTab]
+    // Append any extra keys to the end for visibility
+    const knownKeys = new Set(columns.map(c => c.key))
+    const extraKeys = Array.from(new Set(currentData.flatMap(obj => Object.keys(obj)))).filter(k => !knownKeys.has(k))
+    const allColumns = columns.concat(extraKeys.map(k => ({ key: k, label: k.charAt(0).toUpperCase() + k.slice(1) })))
 
     return (
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className={`${darkMode ? 'bg-slate-700' : 'bg-gray-100'}`}>
             <tr>
-              {Object.keys(currentData[0]).map((key) => (
-                <th key={key} className="px-4 py-3 text-left font-semibold">
-                  {key.charAt(0).toUpperCase() + key.slice(1)}
+              {allColumns.map((col) => (
+                <th key={col.key} className="px-4 py-3 text-left font-semibold">
+                  {col.label}
                 </th>
               ))}
               <th className="px-4 py-3 text-left font-semibold">Actions</th>
@@ -113,14 +174,17 @@ export default function AdminDashboard() {
           </thead>
           <tbody>
             {currentData.map((row, index) => (
-              <tr key={index} className={`border-b ${darkMode ? 'border-slate-700' : 'border-gray-200'} hover:${darkMode ? 'bg-slate-600' : 'bg-gray-50'}`}>
-                {Object.entries(row).map(([key, value], i) => (
-                  <td key={i} className="px-4 py-3">
-                    {typeof value === 'string' && value.length > 50 
-                      ? value.substring(0, 50) + '...' 
-                      : String(value)}
-                  </td>
-                ))}
+              <tr key={index} className={`border-b ${darkMode ? 'border-slate-700' : 'border-gray-200'} ${darkMode ? 'hover:bg-slate-600' : 'hover:bg-gray-50'}`}>
+                {allColumns.map((col) => {
+                  const value = row[col.key]
+                  const text = (typeof value === 'string' ? value : String(value))
+                  const display = value === undefined || value === null ? 'null' : (text.length > 50 ? text.substring(0, 50) + '...' : text)
+                  return (
+                    <td key={col.key} className="px-4 py-3">
+                      {display}
+                    </td>
+                  )
+                })}
                 <td className="px-4 py-3">
                   <button
                     onClick={() => handleDeleteRow(row.id, activeTab.slice(0, -1))}
