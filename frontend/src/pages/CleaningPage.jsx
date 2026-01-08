@@ -89,19 +89,19 @@ export default function CleaningPage() {
       const response = await reportingApi.getReport(reportId)
       const reportData = response.data.report || response.data
       
-      // Check if report exists and has required data
+      // Check if report exists and has required data; if not, navigate back silently
       if (!reportData || !reportData.id) {
-        setError('❌ This cleanup task no longer exists. It may have been deleted by an admin.')
         setReport(null)
+        navigate('/cleaner')
         return
       }
       
       setReport(reportData)
       setBeforeImage(reportData.imageUrl)
       
-      // Check if image URL is valid
+      // Check if image URL is valid; if not, navigate back silently
       if (!reportData.imageUrl) {
-        setError('⚠️ Image for this cleanup task is no longer available.')
+        navigate('/cleaner')
         return
       }
       
@@ -130,12 +130,9 @@ export default function CleaningPage() {
       }
     } catch (err) {
       console.error('Failed to load report:', err)
-      if (err.response?.status === 404) {
-        setError('❌ This cleanup task no longer exists. It may have been deleted by an admin.')
-      } else {
-        setError('Could not load cleanup task')
-      }
+      // On any failure, navigate back to cleaner list without showing errors
       setReport(null)
+      navigate('/cleaner')
     }
   }
 

@@ -70,13 +70,8 @@ export default function CleanerPage() {
         await reportingApi.getReport(cleaningId)
         navigate(`/cleaning/${cleaningId}`)
       } catch (err) {
-        if (err.response?.status === 404) {
-          alert('⚠️ This cleanup task no longer exists. It may have been deleted by an admin.')
-          // Refresh the list to remove this item
-          await fetchCleanings()
-        } else {
-          alert('Error verifying cleanup task. Please try again.')
-        }
+        // Silently refresh list if deleted or on error; no user-facing alert
+        await fetchCleanings()
       }
     }
 

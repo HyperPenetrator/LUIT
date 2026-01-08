@@ -145,6 +145,12 @@ async def get_available_cleanings(wasteType: str = None, userType: str = None, u
             if userType == "individual" and report_data.get("wasteType") == "sewage":
                 continue
             
+            # Skip if report is missing essential fields (likely soft-deleted or incomplete)
+            if not report_data.get("imageUrl"):
+                continue
+            if report_data.get("latitude") is None or report_data.get("longitude") is None:
+                continue
+            
             # Add to cleanings list with calculated distance (uses userLat/userLon if provided)
             def haversine(lat1, lon1, lat2, lon2):
                 from math import radians, sin, cos, sqrt, atan2
