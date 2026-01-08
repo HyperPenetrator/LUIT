@@ -75,6 +75,7 @@ export const analyticsApi = {
   getUserAnalytics: (userId) => api.get(`/analytics/user/${userId}`),
   getNgoAnalytics: (ngoId) => api.get(`/analytics/ngo/${ngoId}`),
   getGlobalAnalytics: () => api.get('/analytics/global'),
+  getTimeBuckets: () => api.get('/analytics/time-buckets'),
   getUsersLeaderboard: (category = 'overall', limit = 20) => 
     api.get('/analytics/leaderboard/users', { params: { category, limit } }),
   getNgosLeaderboard: (category = 'overall', limit = 20) => 

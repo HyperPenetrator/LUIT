@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from services.firebase_service import get_firestore_client
 from google.cloud.firestore import FieldFilter
+from datetime import datetime, timedelta, timezone
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 
@@ -224,3 +225,75 @@ async def get_ngos_leaderboard(category: str = "reporting", limit: int = 20):
     except Exception as e:
         print(f"Error getting NGO leaderboard: {str(e)}")
         return {"leaderboard": []}
+
+@router.get("/time-buckets")
+async def get_time_buckets():
+    """Counts of reports and cleanings for current week, month, and year.
+    Uses createdAt/cleanedAt when present, otherwise falls back to document create_time.
+    """
+    try:
+        db = get_firestore_client()
+
+        now = datetime.now(timezone.utc)
+        week_start = (now - timedelta(days=now.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
+        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        year_start = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+
+        def as_dt(val, fallback: datetime):
+            try:
+                if val is None:
+                    return fallback
+                if isinstance(val, datetime):
+                    return val if val.tzinfo else val.replace(tzinfo=timezone.utc)
+                if isinstance(val, (int, float)):
+                    # Support epoch millis
+                    return datetime.fromtimestamp(val / 1000.0, tz=timezone.utc)
+                if isinstance(val, str):
+                    try:
+                        dt = datetime.fromisoformat(val)
+                        return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+                    except Exception:
+                        return fallback
+                return fallback
+            except Exception:
+                return fallback
+
+        def count_buckets(docs, get_time_field, fallback_time):
+            w = m = y = 0
+            for d in docs:
+                data = d.to_dict() or {}
+                t = get_time_field(data)
+                dt = as_dt(t, fallback_time(d))
+                if dt >= week_start:
+                    w += 1
+                if dt >= month_start:
+                    m += 1
+                if dt >= year_start:
+                    y += 1
+            return w, m, y
+
+        reports_docs = list(db.collection('reports').stream())
+        cleanings_docs = list(db.collection('cleanings').stream())
+
+        r_w, r_m, r_y = count_buckets(
+            reports_docs,
+            lambda x: x.get('createdAt'),
+            lambda d: (getattr(d, 'create_time', now))
+        )
+
+        c_w, c_m, c_y = count_buckets(
+            cleanings_docs,
+            lambda x: x.get('cleanedAt') or x.get('createdAt'),
+            lambda d: (getattr(d, 'create_time', now))
+        )
+
+        return {
+            'reports': { 'week': r_w, 'month': r_m, 'year': r_y },
+            'cleanings': { 'week': c_w, 'month': c_m, 'year': c_y }
+        }
+    except Exception as e:
+        print(f"Error computing time buckets: {str(e)}")
+        return {
+            'reports': { 'week': 0, 'month': 0, 'year': 0 },
+            'cleanings': { 'week': 0, 'month': 0, 'year': 0 }
+        }
