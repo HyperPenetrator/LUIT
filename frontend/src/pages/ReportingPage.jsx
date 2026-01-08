@@ -185,8 +185,11 @@ export default function ReportingPage() {
       }
       
       console.log(`📷 Image captured: ${(imageData.length / 1024).toFixed(2)} KB`)
-      
+
       setImage(imageData)
+      // Turn off camera immediately after capture to free device
+      stopCamera()
+      setCameraStarted(false)
       setError('')
       setVerifying(true)
       setVerification(null)
