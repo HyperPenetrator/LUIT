@@ -40,9 +40,9 @@ export default function CleanerPage() {
   const wasteTypes = ['plastic', 'organic', 'mixed', 'toxic']
   if (userType === 'ngo') wasteTypes.push('sewage')
 
-    const handleCleanClick = (cleaningId) => {
-      // Navigate directly to cleaning page; CleaningPage will handle validation
-      navigate(`/cleaning/${cleaningId}`)
+    const handleCleanClick = (reportId) => {
+      console.log('🔧 Clean button clicked, navigating to report:', reportId)
+      navigate(`/cleaning/${reportId}`)
     }
 
   return (
