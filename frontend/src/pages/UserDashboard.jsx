@@ -40,6 +40,19 @@ export default function UserDashboard() {
     try {
       const response = await analyticsApi.getUserAnalytics(user.id)
       setAnalytics(response.data)
+      
+      // Fetch overall leaderboard to get user's rank
+      try {
+        const leaderboardRes = await analyticsApi.getUsersLeaderboard('overall')
+        const leaderboard = leaderboardRes.data.leaderboard || []
+        const userRankIndex = leaderboard.findIndex(entry => entry.id === user.id)
+        const userRank = userRankIndex !== -1 ? userRankIndex + 1 : '-'
+        
+        setAnalytics(prev => ({ ...prev, userRank }))
+        console.log(`User rank: ${userRank}`)
+      } catch (err) {
+        console.error('Failed to fetch user rank:', err)
+      }
     } catch (error) {
       console.error('Failed to fetch analytics:', error)
     }

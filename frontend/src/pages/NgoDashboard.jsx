@@ -45,8 +45,21 @@ export default function NgoDashboard() {
         reportsCount: res.data?.reportsCount || 0,
         cleaningsCount: res.data?.cleaningsCount || 0,
         totalPoints: res.data?.totalPoints || 0,
-        ngoRank: res.data?.ngoRank || 0
+        ngoRank: 0
       })
+      
+      // Fetch overall leaderboard to get NGO's rank
+      try {
+        const leaderboardRes = await analyticsApi.getNgosLeaderboard('overall')
+        const leaderboard = leaderboardRes.data.leaderboard || []
+        const ngoRankIndex = leaderboard.findIndex(entry => entry.id === ngoId)
+        const ngoRank = ngoRankIndex !== -1 ? ngoRankIndex + 1 : '-'
+        
+        setAnalytics(prev => ({ ...prev, ngoRank }))
+        console.log(`NGO rank: ${ngoRank}`)
+      } catch (err) {
+        console.error('Failed to fetch NGO rank:', err)
+      }
     } catch (err) {
       console.error('Failed to fetch NGO analytics', err.response?.data || err.message)
     } finally {
