@@ -66,18 +66,7 @@ export default function NgoDashboard() {
     }
   }
 
-  const facts = [
-    'The Brahmaputra is one of the world\'s top 10 rivers by discharge.',
-    'Plastic makes up to 80% of marine debris from rivers.',
-    'One report can prevent tons of waste from reaching the sea.',
-    'Community cleanups can reduce local plastic leakage by 30-50%.',
-    'Mangroves in the delta rely on cleaner upstream flow.',
-    'Every cleanup photo helps train AI to detect trash faster.',
-    'Rainy season increases waste wash-off into the river.',
-    'Coordinated NGOs can cover 3x more hotspots than solo efforts.',
-    'Removing ghost fishing nets protects river dolphins.',
-    'Clean Brahmaputra supports 50+ million people for water.'
-  ]
+  
 
   const handleLogout = () => {
     logout()
@@ -115,7 +104,7 @@ export default function NgoDashboard() {
         </div>
       </header>
 
-      <main className="flex-1 max-w-6xl mx-auto px-4 py-8 w-full space-y-8">
+      <main className="flex-1 max-w-6xl mx-auto px-4 py-8 w-full space-y-6">
         {/* Hero */}
         <section className={`relative overflow-hidden rounded-2xl border p-8 transition-all duration-500 ${
           darkMode ? 'bg-gradient-to-br from-slate-900 via-cyan-900 to-emerald-900 border-cyan-800' : 'bg-gradient-to-br from-blue-50 via-white to-green-50 border-cyan-200 shadow-lg'
@@ -174,29 +163,7 @@ export default function NgoDashboard() {
           <div className="absolute -right-8 -bottom-8 w-48 h-48 bg-white/10 rounded-full blur-3xl" aria-hidden />
         </section>
 
-        {/* River facts */}
-        <section className={`rounded-2xl border p-6 transition-all duration-500 ${
-          darkMode ? 'bg-slate-800 border-cyan-700' : 'bg-white border-cyan-200 shadow-md'
-        } ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <p className={`${darkMode ? 'text-cyan-300' : 'text-blue-600'} font-semibold text-sm uppercase tracking-wide`}>Brahmaputra Briefings</p>
-              <h3 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>Facts to brief volunteers</h3>
-            </div>
-            <span className="text-2xl">🌊</span>
-          </div>
-          <div className="grid md:grid-cols-2 gap-3">
-            {facts.map((fact, idx) => (
-              <div
-                key={idx}
-                className={`flex items-start gap-3 p-3 rounded-lg ${darkMode ? 'bg-slate-700/70 text-gray-100' : 'bg-cyan-50 text-gray-800'}`}
-              >
-                <span className="text-xl">•</span>
-                <p className="leading-relaxed text-sm">{fact}</p>
-              </div>
-            ))}
-          </div>
-        </section>
+        
 
         {/* Impact cards */}
         <section className={`grid md:grid-cols-4 gap-4 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'} transition-all duration-500`}>
