@@ -88,13 +88,17 @@ export default function CleaningPage() {
     try {
       console.log(`📡 Fetching report: ${reportId}`)
       const response = await reportingApi.getReport(reportId)
-      console.log(`📦 API Response:`, response.data)
-      const reportData = response.data.report || response.data
+      console.log(`📦 Full API Response:`, response)
+      console.log(`📦 response.data:`, response.data)
+      
+      // Backend returns { success: true, report: {...} }
+      const reportData = response.data?.report
       console.log(`📋 Report data:`, reportData)
       
       // Check if report exists and has required data; if not, navigate back silently
       if (!reportData || !reportData.id) {
         console.warn(`⚠️ Report ${reportId} not found or missing ID, redirecting to cleaner`)
+        console.warn(`reportData:`, reportData)
         setReport(null)
         navigate('/cleaner')
         return
