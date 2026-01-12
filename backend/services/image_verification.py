@@ -268,20 +268,20 @@ def basic_garbage_detection(image_array):
         
         logger.info(f"🔍 Image metrics - Edge density: {edge_density:.4f}, Color variance: {color_variance:.2f}, Laplacian: {laplacian_var:.2f}")
         
-        # More relaxed heuristic: use confidence-based threshold instead of strict indicator count
+        # Balanced heuristic: require at least 2 strong indicators for garbage
         score = 0
-        if edge_density > 0.12:  # Lowered from 0.15
+        if edge_density > 0.14:  # Balanced threshold
             score += 1
-        if color_variance > 2500:  # Lowered from 3000
+        if color_variance > 2800:  # Balanced threshold
             score += 1
-        if laplacian_var > 120:  # Lowered from 150
+        if laplacian_var > 135:  # Balanced threshold
             score += 1
         
-        # Calculate confidence based on how many indicators passed
+        # Calculate confidence based on indicators
         confidence = min(0.85, score / 3.0 + 0.3)
         
-        # Accept if confidence >= 0.50 (at least 1 strong indicator) instead of requiring 2/3
-        is_garbage = confidence >= 0.50
+        # Require at least 2 out of 3 indicators (stricter than just confidence-based)
+        is_garbage = score >= 2
         
         logger.info(f"{'✅' if is_garbage else '❌'} Garbage detection: score={score}/3, is_garbage={is_garbage}, confidence={confidence:.2f}")
         
