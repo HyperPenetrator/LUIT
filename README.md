@@ -216,7 +216,25 @@ LUIT/
 
 ## Team: LuitLabs
 
-This project is developed by the LuitLabs team for the LUIT Hackathon, dedicated to cleaning and protecting the Brahmaputra River.
+**Developed by:** LuitLabs Team  
+**Development Period:** January 2026  
+**Project Started:** January 10, 2026  
+**First Deployment:** January 11, 2026
+
+This project is built for social impact, dedicated to cleaning and protecting the Brahmaputra River ecosystem through community-driven waste management.
+
+### Key Milestones
+- ✅ YOLOv8n ONNX integration for intelligent waste classification
+- ✅ Real-time geolocation and duplicate detection (100m radius)
+- ✅ Multi-tier leaderboard system (overall/reporting/cleaning)
+- ✅ AI-powered waste type auto-detection (plastic/organic/mixed/toxic/sewage)
+- ✅ Before/after cleanup verification with edge density analysis
+- ✅ Production-ready deployment on Railway (backend) + Vercel (frontend)
+
+### Copyright & License
+© 2026 LUIT Team. Licensed under MIT License. See [LICENSE](LICENSE) for details.
+
+All commit history, deployment timestamps, and user data are timestamped proof of original development.
 
 ---
 

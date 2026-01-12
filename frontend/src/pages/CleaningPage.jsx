@@ -585,6 +585,9 @@ export default function CleaningPage() {
             darkMode ? 'text-cyan-400' : 'text-blue-600'
           }`}>LuitLabs</span>
         </p>
+        <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+          © 2026 LUIT Team • Developed January 2026
+        </p>
       </footer>
     </div>
   )
