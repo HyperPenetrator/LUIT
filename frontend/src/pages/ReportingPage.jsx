@@ -216,7 +216,11 @@ export default function ReportingPage() {
         setVerification(verifyResult.data)
 
         if (!verifyResult.data.is_garbage) {
-          setError(verifyResult.data.message || 'No garbage detected')
+          const detectedItems = verifyResult.data.detected_items || []
+          const itemsList = detectedItems.length > 0 
+            ? detectedItems.map(item => `${item.item} (${(item.confidence * 100).toFixed(0)}%)`).join(', ')
+            : 'nothing specific'
+          setError(`${verifyResult.data.message || 'No garbage detected'} - AI detected: ${itemsList}`)
           setVerifying(false)
           return
         }
