@@ -1,12 +1,157 @@
 # Image verification with basic CV (no heavy ML models)
+import base64
+import io
+import logging
+import os
+from typing import List, Tuple
+
 import cv2
 import numpy as np
+import onnxruntime as ort
 from PIL import Image
-import io
-import base64
-import logging
 
 logger = logging.getLogger(__name__)
+
+# Lightweight YOLOv8n ONNX config (keeps footprint small for Railway)
+YOLO_MODEL_URL = "https://github.com/ultralytics/assets/releases/download/v0.0.0/yolov8n.onnx"
+YOLO_MODEL_PATH = os.getenv(
+    "YOLO_ONNX_PATH",
+    os.path.join(os.path.dirname(__file__), "models", "yolov8n.onnx"),
+)
+YOLO_INPUT_SIZE = 640
+YOLO_CONF_THRESHOLD = 0.35
+YOLO_IOU_THRESHOLD = 0.45
+
+_ort_session = None
+
+
+def _ensure_model_downloaded():
+    """Download YOLO ONNX weights once if missing."""
+    os.makedirs(os.path.dirname(YOLO_MODEL_PATH), exist_ok=True)
+    if os.path.exists(YOLO_MODEL_PATH):
+        return
+
+    import requests
+
+    logger.info(f"⬇️ Downloading YOLOv8n ONNX to {YOLO_MODEL_PATH} ...")
+    resp = requests.get(YOLO_MODEL_URL, stream=True, timeout=20)
+    resp.raise_for_status()
+    with open(YOLO_MODEL_PATH, "wb") as f:
+        for chunk in resp.iter_content(chunk_size=8192):
+            if chunk:
+                f.write(chunk)
+    logger.info("✅ YOLOv8n ONNX download complete")
+
+
+def _load_ort_session():
+    """Lazy-load ONNX Runtime session with conservative threading."""
+    global _ort_session
+    if _ort_session is not None:
+        return _ort_session
+
+    _ensure_model_downloaded()
+
+    sess_opts = ort.SessionOptions()
+    sess_opts.intra_op_num_threads = 1
+    sess_opts.inter_op_num_threads = 1
+    providers = ["CPUExecutionProvider"]
+
+    logger.info("⚙️ Loading YOLOv8n ONNX session (CPU)...")
+    _ort_session = ort.InferenceSession(YOLO_MODEL_PATH, sess_options=sess_opts, providers=providers)
+    logger.info("✅ YOLOv8n ONNX session ready")
+    return _ort_session
+
+
+def _letterbox(image: np.ndarray, size: int = YOLO_INPUT_SIZE) -> Tuple[np.ndarray, float, Tuple[int, int]]:
+    """Resize with unchanged aspect ratio using padding (YOLO-style)."""
+    h, w = image.shape[:2]
+    scale = size / max(h, w)
+    new_w, new_h = int(round(w * scale)), int(round(h * scale))
+    resized = cv2.resize(image, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
+    pad_w, pad_h = size - new_w, size - new_h
+    top, bottom = pad_h // 2, pad_h - pad_h // 2
+    left, right = pad_w // 2, pad_w - pad_w // 2
+    padded = cv2.copyMakeBorder(resized, top, bottom, left, right, cv2.BORDER_CONSTANT, value=(114, 114, 114))
+    return padded, scale, (left, top)
+
+
+def _nms(boxes: np.ndarray, scores: np.ndarray, iou_thr: float) -> List[int]:
+    """Simple NMS for single-class boxes."""
+    idxs = scores.argsort()[::-1]
+    keep = []
+    while idxs.size > 0:
+        i = idxs[0]
+        keep.append(i)
+        if idxs.size == 1:
+            break
+        ious = _iou(boxes[i], boxes[idxs[1:]])
+        idxs = idxs[1:][ious < iou_thr]
+    return keep
+
+
+def _iou(box: np.ndarray, boxes: np.ndarray) -> np.ndarray:
+    """Compute IoU between one box and many boxes."""
+    x1 = np.maximum(box[0], boxes[:, 0])
+    y1 = np.maximum(box[1], boxes[:, 1])
+    x2 = np.minimum(box[2], boxes[:, 2])
+    y2 = np.minimum(box[3], boxes[:, 3])
+    inter = np.maximum(0, x2 - x1) * np.maximum(0, y2 - y1)
+    area1 = (box[2] - box[0]) * (box[3] - box[1])
+    area2 = (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1])
+    union = area1 + area2 - inter + 1e-6
+    return inter / union
+
+
+def _run_yolo(image_array: np.ndarray):
+    """Run YOLOv8n ONNX and return detections (boxes, scores, class ids)."""
+    session = _load_ort_session()
+
+    # Ensure RGB uint8
+    if image_array.dtype != np.uint8:
+        image_array = image_array.astype(np.uint8)
+    if image_array.shape[2] == 4:
+        image_array = cv2.cvtColor(image_array, cv2.COLOR_RGBA2RGB)
+
+    img, scale, (pad_x, pad_y) = _letterbox(image_array, YOLO_INPUT_SIZE)
+    img = img.astype(np.float32) / 255.0
+    img = np.transpose(img, (2, 0, 1))  # HWC -> CHW
+    img = np.expand_dims(img, axis=0)   # BCHW
+
+    outputs = session.run(None, {session.get_inputs()[0].name: img})
+    preds = outputs[0]
+    # YOLOv8 ONNX: (1, 84, N)
+    preds = np.squeeze(preds, axis=0)  # (84, N)
+    boxes = preds[:4, :]
+    scores = preds[4:, :]
+
+    class_scores = scores.max(axis=0)
+    class_ids = scores.argmax(axis=0)
+
+    mask = class_scores >= YOLO_CONF_THRESHOLD
+    if not np.any(mask):
+        return []
+
+    boxes = boxes[:, mask]
+    class_scores = class_scores[mask]
+    class_ids = class_ids[mask]
+
+    # xywh -> xyxy
+    x, y, w, h = boxes
+    x1 = (x - w / 2 - pad_x) / scale
+    y1 = (y - h / 2 - pad_y) / scale
+    x2 = (x + w / 2 - pad_x) / scale
+    y2 = (y + h / 2 - pad_y) / scale
+    boxes_xyxy = np.stack([x1, y1, x2, y2], axis=1)
+
+    keep = _nms(boxes_xyxy, class_scores, YOLO_IOU_THRESHOLD)
+    return [
+        {
+            "box": boxes_xyxy[i].tolist(),
+            "score": float(class_scores[i]),
+            "class_id": int(class_ids[i]),
+        }
+        for i in keep
+    ]
 
 def decode_base64_image(image_base64: str):
     """Safely decode base64 image string with proper padding"""
@@ -80,13 +225,34 @@ async def verify_garbage_image(image_base64: str) -> dict:
 
         image_array = decode_base64_image(image_base64)
         
-        # Use basic CV detection
+        # First try YOLOv8n ONNX; fall back to heuristic if it fails or finds nothing
+        try:
+            detections = _run_yolo(image_array)
+            if detections:
+                top = max(detections, key=lambda d: d['score'])
+                return {
+                    'is_garbage': True,
+                    'confidence': float(top['score']),
+                    'detected_items': [
+                        {
+                            'item': f"object_{top['class_id']}",
+                            'confidence': float(top['score']),
+                            'box': top['box'],
+                        }
+                    ],
+                    'message': 'Waste detected (YOLOv8n)',
+                }
+            logger.info("⚠️ YOLO found no confident detections; falling back to heuristic")
+        except Exception as yolo_err:
+            logger.error(f"❌ YOLO inference failed: {yolo_err}; using heuristic fallback")
+
+        # Use basic CV detection as fallback
         is_garbage, conf = basic_garbage_detection(image_array)
         return {
             'is_garbage': bool(is_garbage),
             'confidence': float(conf),
             'detected_items': [{'item': 'waste area', 'confidence': float(conf)}],
-            'message': 'Waste area detected' if is_garbage else 'No garbage detected. Please take a clearer photo of waste area.'
+            'message': 'Waste area detected (heuristic)' if is_garbage else 'No garbage detected. Please take a clearer photo of waste area.'
         }
     
     except Exception as e:
