@@ -5,6 +5,7 @@ from services.image_verification import verify_garbage_image
 from services.location_service import check_duplicate_location
 from services.cloudinary_service import upload_image_to_cloudinary
 from services.firebase_service import add_document, query_documents, get_document
+from services.geofence_service import is_within_brahmaputra_geofence
 from datetime import datetime
 
 router = APIRouter(prefix="/reporting", tags=["reporting"])
@@ -94,6 +95,11 @@ async def check_location(latitude: float, longitude: float):
 async def create_report(request: ReportRequest):
     """Create new garbage report"""
     try:
+        # Check geofence: must be within 800m of Brahmaputra River
+        geofence_check = is_within_brahmaputra_geofence(request.latitude, request.longitude)
+        if not geofence_check['allowed']:
+            return {"success": False, "message": geofence_check['message']}
+        
         # Resolve image source
         image_url = None
         image_public_id = None
