@@ -104,7 +104,7 @@ async def check_geofence(latitude: float, longitude: float):
 async def create_report(request: ReportRequest):
     """Create new garbage report"""
     try:
-        # Check geofence: must be within 800m of Brahmaputra River
+        # Check geofence: must be within 2km of Brahmaputra River
         geofence_check = is_within_brahmaputra_geofence(request.latitude, request.longitude)
         if not geofence_check['allowed']:
             return {"success": False, "message": geofence_check['message']}

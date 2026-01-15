@@ -277,7 +277,7 @@ export default function ReportingPage() {
 
   const handleSubmit = async () => {
     if (geofenceStatus && !geofenceStatus.allowed) {
-      setError(`🚫 Cannot report outside geofence. You must be within 800m of Brahmaputra River (currently ${Math.round(geofenceStatus.distance)}m away)`)
+      setError(`🚫 Cannot report outside geofence. You must be within 2km of Brahmaputra River (currently ${Math.round(geofenceStatus.distance)}m away)`)
       return
     }
     if (locationConflict?.isDuplicate) {
@@ -399,7 +399,7 @@ export default function ReportingPage() {
                 <p className={`text-sm font-semibold mt-2 ${
                   darkMode ? 'text-red-300' : 'text-red-600'
                 }`}>
-                  🚫 Too far from Brahmaputra River ({Math.round(geofenceStatus.distance)}m away, max 800m)
+                  🚫 Too far from Brahmaputra River ({Math.round(geofenceStatus.distance)}m away, max 2km)
                 </p>
               )}
               {geofenceStatus && geofenceStatus.allowed && (
@@ -529,7 +529,7 @@ export default function ReportingPage() {
                       darkMode ? 'text-red-200' : 'text-red-700'
                     }`}>
                       {geofenceStatus 
-                        ? `You must be within 800m of Brahmaputra River to report. Currently ${Math.round(geofenceStatus.distance)}m away.`
+                        ? `You must be within 2km of Brahmaputra River to report. Currently ${Math.round(geofenceStatus.distance)}m away.`
                         : 'Move closer to Brahmaputra River to start reporting.'}
                     </p>
                   </div>

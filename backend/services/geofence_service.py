@@ -1,6 +1,6 @@
 """
 Geofencing service for Brahmaputra River in Kamrup Metro district
-Restricts reporting to within 800m of river banks
+Restricts reporting to within 2km of river banks
 """
 import math
 from typing import Tuple, List
@@ -42,7 +42,7 @@ BRAHMAPUTRA_RIVER_PATH = [
     (26.1620, 91.6310),
 ]
 
-GEOFENCE_RADIUS_METERS = 800
+GEOFENCE_RADIUS_METERS = 2000
 
 
 def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
@@ -108,7 +108,7 @@ def point_to_line_segment_distance(
 
 def is_within_brahmaputra_geofence(latitude: float, longitude: float) -> dict:
     """
-    Check if coordinates are within 800m of Brahmaputra River in Kamrup Metro.
+    Check if coordinates are within 2km of Brahmaputra River in Kamrup Metro.
     
     Returns:
         dict with 'allowed' (bool) and 'distance' (float, nearest distance to river in meters)
@@ -140,5 +140,5 @@ def is_within_brahmaputra_geofence(latitude: float, longitude: float) -> dict:
     return {
         'allowed': False,
         'distance': round(min_distance, 1),
-        'message': f'Outside geofence. Must be within 800m of Brahmaputra River (currently {round(min_distance, 0)}m away)'
+        'message': f'Outside geofence. Must be within 2km of Brahmaputra River (currently {round(min_distance, 0)}m away)'
     }
