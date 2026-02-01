@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api'
+import useDeviceDetection from '../hooks/useDeviceDetection'
+import { getResponsiveClasses } from '../utils/layoutConfig'
 
 export default function AdminDashboard() {
   const navigate = useNavigate()
+  const deviceInfo = useDeviceDetection()
+  const responsiveClasses = getResponsiveClasses(deviceInfo)
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode')
     return saved ? JSON.parse(saved) : false
@@ -35,7 +39,7 @@ export default function AdminDashboard() {
         api.get('/admin/users'),
         api.get('/admin/ngos')
       ])
-      
+
       setData({
         reports: reportsRes.data || [],
         cleanings: cleaningsRes.data || [],
@@ -203,14 +207,13 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className={`min-h-screen flex flex-col transition-colors ${
-      darkMode 
-        ? 'bg-gradient-to-b from-slate-900 to-slate-800 text-white' 
+    <div className={`min-h-screen flex flex-col transition-colors ${darkMode
+        ? 'bg-gradient-to-b from-slate-900 to-slate-800 text-white'
         : 'bg-gradient-to-b from-red-50 to-orange-50 text-gray-800'
-    }`}>
+      }`}>
       {/* Header */}
       <header className={`${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} border-b shadow-sm sticky top-0 z-40 transition-colors`}>
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+        <div className={`${deviceInfo.isDesktop ? 'max-w-7xl' : responsiveClasses.container} mx-auto px-4 py-4 flex justify-between items-center`}>
           <div className="flex items-center gap-3">
             <span className="text-3xl">�</span>
             <div>
@@ -221,11 +224,10 @@ export default function AdminDashboard() {
           <div className="flex gap-2 items-center">
             <button
               onClick={() => setDarkMode(!darkMode)}
-              className={`px-2 py-1 rounded-md text-sm transition transform hover:scale-110 ${
-                darkMode 
-                  ? 'bg-slate-700 text-yellow-300 hover:bg-slate-600' 
+              className={`px-2 py-1 rounded-md text-sm transition transform hover:scale-110 ${darkMode
+                  ? 'bg-slate-700 text-yellow-300 hover:bg-slate-600'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
+                }`}
             >
               {darkMode ? '☀️' : '🌙'}
             </button>
@@ -247,7 +249,7 @@ export default function AdminDashboard() {
 
       {/* Message */}
       {message && (
-        <div className={`max-w-7xl mx-auto w-full px-4 mt-4`}>
+        <div className={`${deviceInfo.isDesktop ? 'max-w-7xl' : responsiveClasses.container} mx-auto w-full px-4 mt-4`}>
           <div className={`p-4 rounded-lg ${message.includes('Failed') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
             {message}
           </div>
@@ -255,9 +257,9 @@ export default function AdminDashboard() {
       )}
 
       {/* Main Content */}
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-8">
+      <main className={`flex-1 ${deviceInfo.isDesktop ? 'max-w-7xl' : responsiveClasses.container} mx-auto w-full px-4 py-8`}>
         {/* Stats Overview */}
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <section className={`grid ${deviceInfo.isDesktop ? 'grid-cols-4' : 'grid-cols-2'} gap-4 mb-8`}>
           <div className={`p-4 rounded-xl text-center ${darkMode ? 'bg-slate-700' : 'bg-white shadow-md'} transition hover:scale-105`}>
             <p className={`text-3xl font-bold ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>{data.reports.length}</p>
             <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Reports</p>
@@ -283,15 +285,14 @@ export default function AdminDashboard() {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 rounded-lg font-semibold transition transform hover:scale-105 ${
-                  activeTab === tab
-                    ? darkMode 
-                      ? 'bg-red-600 text-white' 
+                className={`px-4 py-2 rounded-lg font-semibold transition transform hover:scale-105 ${activeTab === tab
+                    ? darkMode
+                      ? 'bg-red-600 text-white'
                       : 'bg-red-500 text-white'
-                    : darkMode 
-                      ? 'bg-slate-700 text-gray-300 hover:bg-slate-600' 
+                    : darkMode
+                      ? 'bg-slate-700 text-gray-300 hover:bg-slate-600'
                       : 'bg-white text-gray-700 hover:bg-gray-100'
-                }`}
+                  }`}
               >
                 {tab.charAt(0).toUpperCase() + tab.slice(1)}
               </button>
@@ -302,9 +303,8 @@ export default function AdminDashboard() {
           <button
             onClick={() => handleClearDatabase(activeTab)}
             disabled={loading}
-            className={`px-6 py-3 rounded-lg font-bold text-white transition transform hover:scale-105 ${
-              loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'
-            }`}
+            className={`px-6 py-3 rounded-lg font-bold text-white transition transform hover:scale-105 ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'
+              }`}
           >
             {loading ? 'Processing...' : `Clear All ${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}`}
           </button>
@@ -325,9 +325,8 @@ export default function AdminDashboard() {
       {/* Footer */}
       <footer className={`border-t ${darkMode ? 'border-slate-700 bg-slate-800' : 'border-gray-200 bg-white'} py-6 text-center transition-colors`}>
         <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-          Made with 💙 by <span className={`font-bold ${
-            darkMode ? 'text-cyan-400' : 'text-blue-600'
-          }`}>LuitLabs</span>
+          Made with 💙 by <span className={`font-bold ${darkMode ? 'text-cyan-400' : 'text-blue-600'
+            }`}>LuitLabs</span>
         </p>
       </footer>
     </div>

@@ -2,11 +2,15 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store'
 import { analyticsApi } from '../api'
+import useDeviceDetection from '../hooks/useDeviceDetection'
+import { getResponsiveClasses } from '../utils/layoutConfig'
 
 export default function NgoDashboard() {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
   const logout = useAuthStore((state) => state.logout)
+  const deviceInfo = useDeviceDetection()
+  const responsiveClasses = getResponsiveClasses(deviceInfo)
   const [analytics, setAnalytics] = useState({
     reportsCount: 0,
     cleaningsCount: 0,
@@ -19,7 +23,7 @@ export default function NgoDashboard() {
   })
   const [loading, setLoading] = useState(false)
   const [showContent, setShowContent] = useState(false)
-  
+
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode')
     return saved ? JSON.parse(saved) : false
@@ -47,14 +51,14 @@ export default function NgoDashboard() {
         totalPoints: res.data?.totalPoints || 0,
         ngoRank: 0
       })
-      
+
       // Fetch overall leaderboard to get NGO's rank
       try {
         const leaderboardRes = await analyticsApi.getNgosLeaderboard('overall')
         const leaderboard = leaderboardRes.data.leaderboard || []
         const ngoRankIndex = leaderboard.findIndex(entry => entry.id === ngoId)
         const ngoRank = ngoRankIndex !== -1 ? ngoRankIndex + 1 : '-'
-        
+
         setAnalytics(prev => ({ ...prev, ngoRank }))
       } catch (err) {
         console.error('Failed to fetch NGO rank:', err)
@@ -78,7 +82,7 @@ export default function NgoDashboard() {
     }
   }
 
-  
+
 
   const handleLogout = () => {
     logout()
@@ -86,16 +90,14 @@ export default function NgoDashboard() {
   }
 
   return (
-    <div className={`min-h-screen flex flex-col transition-colors ${
-      darkMode 
-        ? 'bg-gradient-to-b from-slate-900 to-cyan-900' 
+    <div className={`min-h-screen flex flex-col transition-colors ${darkMode
+        ? 'bg-gradient-to-b from-slate-900 to-cyan-900'
         : 'bg-gradient-to-b from-blue-50 to-green-50'
-    }`}>
-      {/* Header */}
-      <header className={`sticky top-0 z-40 border-b transition-colors ${
-        darkMode ? 'bg-slate-800 border-cyan-700' : 'bg-white border-cyan-200 shadow-sm'
       }`}>
-        <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+      {/* Header */}
+      <header className={`sticky top-0 z-40 border-b transition-colors ${darkMode ? 'bg-slate-800 border-cyan-700' : 'bg-white border-cyan-200 shadow-sm'
+        }`}>
+        <div className={`${deviceInfo.isDesktop ? 'max-w-6xl' : responsiveClasses.container} mx-auto px-4 py-4 flex justify-between items-center`}>
           <div className="flex items-center gap-2">
             <span className="text-3xl">💧</span>
             <div>
@@ -105,23 +107,21 @@ export default function NgoDashboard() {
           </div>
           <button
             onClick={() => setDarkMode(!darkMode)}
-            className={`px-2 py-1 rounded-md text-sm transition transform hover:scale-110 ${
-              darkMode 
-                ? 'bg-slate-700 text-yellow-300 hover:bg-slate-600' 
+            className={`px-2 py-1 rounded-md text-sm transition transform hover:scale-110 ${darkMode
+                ? 'bg-slate-700 text-yellow-300 hover:bg-slate-600'
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
+              }`}
           >
             {darkMode ? '☀️' : '🌙'}
           </button>
         </div>
       </header>
 
-      <main className="flex-1 max-w-6xl mx-auto px-4 py-8 w-full space-y-6">
+      <main className={`flex-1 ${deviceInfo.isDesktop ? 'max-w-6xl' : responsiveClasses.container} mx-auto px-4 py-8 w-full space-y-6`}>
         {/* Hero */}
-        <section className={`relative overflow-hidden rounded-2xl border p-8 transition-all duration-500 ${
-          darkMode ? 'bg-gradient-to-br from-slate-900 via-cyan-900 to-emerald-900 border-cyan-800' : 'bg-gradient-to-br from-blue-50 via-white to-green-50 border-cyan-200 shadow-lg'
-        } ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-          <div className="grid md:grid-cols-2 gap-6 items-center">
+        <section className={`relative overflow-hidden rounded-2xl border ${deviceInfo.isDesktop ? 'p-8' : 'p-6'} transition-all duration-500 ${darkMode ? 'bg-gradient-to-br from-slate-900 via-cyan-900 to-emerald-900 border-cyan-800' : 'bg-gradient-to-br from-blue-50 via-white to-green-50 border-cyan-200 shadow-lg'
+          } ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+          <div className={`grid ${deviceInfo.isDesktop ? 'md:grid-cols-2' : 'grid-cols-1'} gap-6 items-center`}>
             <div className="space-y-3">
               <p className={`${darkMode ? 'text-cyan-300' : 'text-blue-600'} font-semibold text-sm uppercase tracking-wide`}>NGO Command</p>
               <h2 className={`text-3xl md:text-4xl font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>
@@ -156,9 +156,9 @@ export default function NgoDashboard() {
             </div>
             <div className={`grid grid-cols-2 gap-4 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
               {[{ label: 'Reports Created', value: analytics.reportsCount, accent: 'text-cyan-300' },
-                { label: 'Cleanups Led', value: analytics.cleaningsCount, accent: 'text-emerald-300' },
-                { label: 'Points Earned', value: analytics.totalPoints, accent: 'text-cyan-100' },
-                { label: 'Current Rank', value: `#${analytics.ngoRank || 0}`, accent: 'text-emerald-200' }]
+              { label: 'Cleanups Led', value: analytics.cleaningsCount, accent: 'text-emerald-300' },
+              { label: 'Points Earned', value: analytics.totalPoints, accent: 'text-cyan-100' },
+              { label: 'Current Rank', value: `#${analytics.ngoRank || 0}`, accent: 'text-emerald-200' }]
                 .map((item) => (
                   <div
                     key={item.label}
@@ -175,10 +175,10 @@ export default function NgoDashboard() {
           <div className="absolute -right-8 -bottom-8 w-48 h-48 bg-white/10 rounded-full blur-3xl" aria-hidden />
         </section>
 
-        
+
 
         {/* Impact cards */}
-        <section className={`grid md:grid-cols-4 gap-4 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'} transition-all duration-500`}>
+        <section className={`grid ${deviceInfo.isDesktop ? 'md:grid-cols-4' : 'grid-cols-2'} gap-4 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'} transition-all duration-500`}>
           {[{
             title: 'Reports Filed',
             value: analytics.reportsCount,
@@ -202,9 +202,8 @@ export default function NgoDashboard() {
           }].map((card) => (
             <div
               key={card.title}
-              className={`p-6 rounded-xl border transition transform hover:-translate-y-1 hover:shadow-lg ${
-                darkMode ? 'bg-slate-800 border-cyan-700 text-white' : 'bg-white border-cyan-200 text-slate-900 shadow-md'
-              }`}
+              className={`p-6 rounded-xl border transition transform hover:-translate-y-1 hover:shadow-lg ${darkMode ? 'bg-slate-800 border-cyan-700 text-white' : 'bg-white border-cyan-200 text-slate-900 shadow-md'
+                }`}
             >
               <div className="flex items-center justify-between mb-3">
                 <p className="text-sm text-gray-400">{card.title}</p>
@@ -219,9 +218,8 @@ export default function NgoDashboard() {
         </section>
 
         {/* Global impact */}
-        <section className={`rounded-2xl border p-6 transition-all duration-500 ${
-          darkMode ? 'bg-slate-800 border-cyan-700' : 'bg-white border-cyan-200 shadow-md'
-        } ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+        <section className={`rounded-2xl border p-6 transition-all duration-500 ${darkMode ? 'bg-slate-800 border-cyan-700' : 'bg-white border-cyan-200 shadow-md'
+          } ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className={`${darkMode ? 'text-cyan-300' : 'text-blue-600'} font-semibold text-sm uppercase tracking-wide`}>Riverwide Progress</p>
@@ -229,7 +227,7 @@ export default function NgoDashboard() {
             </div>
             <span className="text-2xl">🌍</span>
           </div>
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className={`grid ${deviceInfo.isDesktop ? 'md:grid-cols-2' : 'grid-cols-1'} gap-4`}>
             <div className={`p-5 rounded-xl border ${darkMode ? 'bg-slate-700/70 border-cyan-700 text-white' : 'bg-cyan-50 border-cyan-200 text-slate-900'}`}>
               <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Total Reports Logged</p>
               <p className={`text-3xl font-bold ${darkMode ? 'text-cyan-300' : 'text-blue-700'}`}>
@@ -279,9 +277,8 @@ export default function NgoDashboard() {
       </main>
 
       {/* Footer */}
-      <footer className={`border-t mt-12 py-6 text-center transition-colors ${
-        darkMode ? 'border-slate-700 bg-slate-800' : 'border-gray-200 bg-white'
-      }`}>
+      <footer className={`border-t mt-12 py-6 text-center transition-colors ${darkMode ? 'border-slate-700 bg-slate-800' : 'border-gray-200 bg-white'
+        }`}>
         <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
           Made with 💙 by <span className={`font-bold ${darkMode ? 'text-cyan-400' : 'text-blue-600'}`}>LuitLabs</span>
         </p>

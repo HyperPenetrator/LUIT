@@ -2,11 +2,16 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store'
 import { analyticsApi } from '../api'
+import useDeviceDetection from '../hooks/useDeviceDetection'
+import { getResponsiveClasses, getAnimationConfig } from '../utils/layoutConfig'
 
 export default function UserDashboard() {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
   const logout = useAuthStore((state) => state.logout)
+  const deviceInfo = useDeviceDetection()
+  const responsiveClasses = getResponsiveClasses(deviceInfo)
+  const animationConfig = getAnimationConfig(deviceInfo)
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode')
     return saved ? JSON.parse(saved) : false
@@ -40,14 +45,14 @@ export default function UserDashboard() {
     try {
       const response = await analyticsApi.getUserAnalytics(user.id)
       setAnalytics(response.data)
-      
+
       // Fetch overall leaderboard to get user's rank
       try {
         const leaderboardRes = await analyticsApi.getUsersLeaderboard('overall')
         const leaderboard = leaderboardRes.data.leaderboard || []
         const userRankIndex = leaderboard.findIndex(entry => entry.id === user.id)
         const userRank = userRankIndex !== -1 ? userRankIndex + 1 : '-'
-        
+
         setAnalytics(prev => ({ ...prev, userRank }))
       } catch (err) {
         console.error('Failed to fetch user rank:', err)
@@ -88,11 +93,10 @@ export default function UserDashboard() {
   ]
 
   return (
-    <div className={`min-h-screen flex flex-col transition-colors ${
-      darkMode 
-        ? 'bg-gradient-to-b from-slate-900 to-slate-800 text-white' 
+    <div className={`min-h-screen flex flex-col transition-colors ${darkMode
+        ? 'bg-gradient-to-b from-slate-900 to-slate-800 text-white'
         : 'bg-gradient-to-b from-blue-50 to-green-50 text-gray-800'
-    }`}>
+      }`}>
       <style>{`
         @keyframes slideDown {
           from { opacity: 0; transform: translateY(-20px); }
@@ -114,21 +118,21 @@ export default function UserDashboard() {
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(-5px); }
         }
-        .animate-slideDown { animation: slideDown 0.6s ease-out; }
-        .animate-fadeIn { animation: fadeIn 0.8s ease-in; }
-        .animate-slideUp { animation: slideUp 0.6s ease-out; }
-        .animate-slideInScale { animation: slideInScale 0.8s ease-out; }
+        .animate-slideDown { animation: slideDown ${animationConfig.duration} ease-out; }
+        .animate-fadeIn { animation: fadeIn ${animationConfig.duration} ease-in; }
+        .animate-slideUp { animation: slideUp ${animationConfig.duration} ease-out; }
+        .animate-slideInScale { animation: slideInScale ${animationConfig.duration} ease-out; }
         .animate-bounce-gentle { animation: bounce-gentle 2s ease-in-out infinite; }
-        .stagger-1 { animation-delay: 0.1s; }
-        .stagger-2 { animation-delay: 0.2s; }
-        .stagger-3 { animation-delay: 0.3s; }
-        .stagger-4 { animation-delay: 0.4s; }
-        .stagger-5 { animation-delay: 0.5s; }
+        .stagger-1 { animation-delay: ${animationConfig.staggerDelay}s; }
+        .stagger-2 { animation-delay: ${animationConfig.staggerDelay * 2}s; }
+        .stagger-3 { animation-delay: ${animationConfig.staggerDelay * 3}s; }
+        .stagger-4 { animation-delay: ${animationConfig.staggerDelay * 4}s; }
+        .stagger-5 { animation-delay: ${animationConfig.staggerDelay * 5}s; }
       `}</style>
 
       {/* Header */}
       <header className={`${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} border-b shadow-sm sticky top-0 z-40 transition-colors animate-slideDown`}>
-        <div className="max-w-md mx-auto px-4 py-4 flex justify-between items-center">
+        <div className={`${responsiveClasses.container} flex justify-between items-center ${deviceInfo.isDesktop ? 'py-4' : 'py-4'}`}>
           <div className="flex items-center gap-2">
             <span className="text-4xl">💧</span>
             <div>
@@ -139,11 +143,10 @@ export default function UserDashboard() {
           <div className="flex gap-2 items-center">
             <button
               onClick={() => setDarkMode(!darkMode)}
-              className={`px-2 py-1 rounded-md text-sm transition transform hover:scale-110 ${
-                darkMode 
-                  ? 'bg-slate-700 text-yellow-300 hover:bg-slate-600' 
+              className={`px-2 py-1 rounded-md text-sm transition transform hover:scale-110 ${darkMode
+                  ? 'bg-slate-700 text-yellow-300 hover:bg-slate-600'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
+                }`}
             >
               {darkMode ? '☀️' : '🌙'}
             </button>
@@ -158,14 +161,13 @@ export default function UserDashboard() {
       </header>
 
       {/* Main Content */}
-      <main className={`flex-1 max-w-md mx-auto px-4 py-8 w-full ${showContent ? 'animate-fadeIn' : 'opacity-0'}`}>
+      <main className={`flex-1 ${responsiveClasses.container} ${showContent ? 'animate-fadeIn' : 'opacity-0'}`}>
         {/* Hero Section */}
-        <section className={`text-center mb-10 p-8 rounded-2xl ${
-          darkMode 
-            ? 'bg-gradient-to-br from-slate-900 to-cyan-900' 
+        <section className={`text-center mb-10 ${deviceInfo.isDesktop ? 'p-10' : 'p-8'} rounded-2xl ${darkMode
+            ? 'bg-gradient-to-br from-slate-900 to-cyan-900'
             : 'bg-gradient-to-br from-blue-100 via-cyan-100 to-green-100'
-        } transition-colors animate-slideUp stagger-1 transform hover:-translate-y-1 hover:shadow-xl`}>
-          <h2 className={`text-5xl font-bold mb-4 ${darkMode ? 'text-cyan-300' : 'text-blue-800'} animate-slideInScale`}>
+          } transition-colors animate-slideUp stagger-1 transform hover:-translate-y-1 hover:shadow-xl`}>
+          <h2 className={`${responsiveClasses.heroText} font-bold mb-4 ${darkMode ? 'text-cyan-300' : 'text-blue-800'} animate-slideInScale`}>
             🌊 Clean Brahmaputra River
           </h2>
           <p className={`text-lg mb-6 ${darkMode ? 'text-cyan-100' : 'text-gray-700'}`}>
@@ -175,10 +177,10 @@ export default function UserDashboard() {
 
         {/* User Stats */}
         <section className="mb-8">
-          <h3 className={`text-2xl font-bold mb-4 ${darkMode ? 'text-cyan-300' : 'text-gray-800'}`}>
+          <h3 className={`${responsiveClasses.headingText} font-bold mb-4 ${darkMode ? 'text-cyan-300' : 'text-gray-800'}`}>
             📊 Your Impact
           </h3>
-          <div className="grid grid-cols-2 gap-4">
+          <div className={responsiveClasses.statsGrid}>
             <div className={`p-4 rounded-xl text-center ${darkMode ? 'bg-gradient-to-br from-slate-800 to-slate-700' : 'bg-gradient-to-br from-white to-blue-50'} transition-colors animate-slideUp stagger-2 transform hover:-translate-y-1 hover:shadow-xl`}>
               <p className={`text-3xl font-bold ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>{analytics.reportsCount}</p>
               <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Reports Created</p>
@@ -200,7 +202,7 @@ export default function UserDashboard() {
 
         {/* Encouraging Facts Section */}
         <section className={`mb-8 animate-slideUp stagger-3`}>
-          <h3 className={`text-2xl font-bold mb-4 ${darkMode ? 'text-cyan-300' : 'text-gray-800'}`}>
+          <h3 className={`${responsiveClasses.headingText} font-bold mb-4 ${darkMode ? 'text-cyan-300' : 'text-gray-800'}`}>
             ✨ Did You Know?
           </h3>
           <div className={`p-4 rounded-xl mb-4 border ${darkMode ? 'bg-slate-700 border-cyan-700' : 'bg-white border-cyan-100 shadow-md'} transition-colors transform hover:scale-105 hover:shadow-xl`}>
@@ -211,53 +213,48 @@ export default function UserDashboard() {
         </section>
 
         {/* Action Buttons */}
-        <div className="grid gap-4 mb-8">
+        <div className={`grid ${deviceInfo.isDesktop ? 'grid-cols-2' : 'grid-cols-1'} ${responsiveClasses.spacing} mb-8`}>
           <button
             onClick={() => navigate('/report')}
-            className={`w-full py-4 rounded-xl text-white font-bold text-lg transition transform hover:scale-105 active:scale-95 animate-slideUp stagger-3 ${
-              darkMode 
-                ? 'bg-gradient-to-r from-sky-700 to-cyan-700 hover:from-sky-800 hover:to-cyan-800' 
+            className={`w-full py-4 rounded-xl text-white font-bold text-lg transition transform hover:scale-105 active:scale-95 animate-slideUp stagger-3 ${darkMode
+                ? 'bg-gradient-to-r from-sky-700 to-cyan-700 hover:from-sky-800 hover:to-cyan-800'
                 : 'bg-gradient-to-r from-sky-500 to-cyan-500 hover:from-sky-600 hover:to-cyan-600'
-            }`}
+              }`}
           >
             📸 Report Garbage
           </button>
           <button
             onClick={() => navigate('/cleaner')}
-            className={`w-full py-4 rounded-xl text-white font-bold text-lg transition transform hover:scale-105 active:scale-95 animate-slideUp stagger-4 ${
-              darkMode 
-                ? 'bg-gradient-to-r from-emerald-700 to-teal-700 hover:from-emerald-800 hover:to-teal-800' 
+            className={`w-full py-4 rounded-xl text-white font-bold text-lg transition transform hover:scale-105 active:scale-95 animate-slideUp stagger-4 ${darkMode
+                ? 'bg-gradient-to-r from-emerald-700 to-teal-700 hover:from-emerald-800 hover:to-teal-800'
                 : 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600'
-            }`}
+              }`}
           >
             🧹 Join Cleanup
           </button>
           <button
             onClick={() => navigate('/leaderboard')}
-            className={`w-full py-4 rounded-xl text-white font-bold text-lg transition transform hover:scale-105 active:scale-95 animate-slideUp stagger-4 ${
-              darkMode 
-                ? 'bg-gradient-to-r from-blue-700 to-cyan-700 hover:from-blue-800 hover:to-cyan-800' 
+            className={`w-full py-4 rounded-xl text-white font-bold text-lg transition transform hover:scale-105 active:scale-95 animate-slideUp stagger-4 ${darkMode
+                ? 'bg-gradient-to-r from-blue-700 to-cyan-700 hover:from-blue-800 hover:to-cyan-800'
                 : 'bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600'
-            }`}
+              }`}
           >
             🏆 Leaderboard
           </button>
           <button
             onClick={() => navigate('/analytics')}
-            className={`w-full py-4 rounded-xl text-white font-bold text-lg transition transform hover:scale-105 active:scale-95 animate-slideUp stagger-4 ${
-              darkMode 
-                ? 'bg-gradient-to-r from-purple-700 to-pink-700 hover:from-purple-800 hover:to-pink-800' 
+            className={`w-full py-4 rounded-xl text-white font-bold text-lg transition transform hover:scale-105 active:scale-95 animate-slideUp stagger-4 ${darkMode
+                ? 'bg-gradient-to-r from-purple-700 to-pink-700 hover:from-purple-800 hover:to-pink-800'
                 : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
-            }`}
+              }`}
           >
             📊 Analytics
           </button>
         </div>
 
         {/* Global Analytics */}
-        <section className={`rounded-xl shadow-md p-6 grid grid-cols-2 gap-4 mb-8 ${
-          darkMode ? 'bg-gradient-to-br from-slate-800 to-slate-700' : 'bg-gradient-to-br from-white to-blue-50'
-        } transition-colors animate-slideUp stagger-5 transform hover:-translate-y-1 hover:shadow-xl`}>
+        <section className={`rounded-xl shadow-md p-6 grid grid-cols-2 gap-4 mb-8 ${darkMode ? 'bg-gradient-to-br from-slate-800 to-slate-700' : 'bg-gradient-to-br from-white to-blue-50'
+          } transition-colors animate-slideUp stagger-5 transform hover:-translate-y-1 hover:shadow-xl`}>
           <div className="text-center transform hover:scale-110 transition">
             <p className={`text-3xl font-bold ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>
               {globalAnalytics.totalReports.toLocaleString()}
