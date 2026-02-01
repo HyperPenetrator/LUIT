@@ -58,46 +58,9 @@ export default function MainPage() {
 
   return (
     <div className={`min-h-screen flex flex-col transition-colors ${darkMode
-        ? 'bg-gradient-to-b from-slate-900 to-slate-800 text-white'
-        : 'bg-gradient-to-b from-blue-50 to-green-50 text-gray-800'
+      ? 'bg-gradient-to-b from-slate-900 to-slate-800 text-white'
+      : 'bg-gradient-to-b from-blue-50 to-green-50 text-gray-800'
       }`}>
-      <style>{`
-        @keyframes slideDown {
-          from { opacity: 0; transform: translateY(-20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes slideUp {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes slideInScale {
-          from { opacity: 0; transform: scale(0.9); }
-          to { opacity: 1; transform: scale(1); }
-        }
-        @keyframes pulse-glow {
-          0%, 100% { box-shadow: 0 0 20px rgba(249, 115, 22, 0.3); }
-          50% { box-shadow: 0 0 30px rgba(249, 115, 22, 0.6); }
-        }
-        @keyframes bounce-gentle {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-5px); }
-        }
-        .animate-slideDown { animation: slideDown ${animationConfig.duration} ease-out; }
-        .animate-fadeIn { animation: fadeIn ${animationConfig.duration} ease-in; }
-        .animate-slideUp { animation: slideUp ${animationConfig.duration} ease-out; }
-        .animate-slideInScale { animation: slideInScale ${animationConfig.duration} ease-out; }
-        .animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
-        .animate-bounce-gentle { animation: bounce-gentle 2s ease-in-out infinite; }
-        .stagger-1 { animation-delay: ${animationConfig.staggerDelay}s; }
-        .stagger-2 { animation-delay: ${animationConfig.staggerDelay * 2}s; }
-        .stagger-3 { animation-delay: ${animationConfig.staggerDelay * 3}s; }
-        .stagger-4 { animation-delay: ${animationConfig.staggerDelay * 4}s; }
-        .stagger-5 { animation-delay: ${animationConfig.staggerDelay * 5}s; }
-      `}</style>
       {/* Header */}
       <header className={`${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} border-b shadow-sm sticky top-0 z-40 transition-colors animate-slideDown`}>
         <div className={`${responsiveClasses.container} flex justify-between items-center ${deviceInfo.isDesktop ? 'py-4' : 'py-4'}`}>
@@ -109,8 +72,8 @@ export default function MainPage() {
             <button
               onClick={() => setDarkMode(!darkMode)}
               className={`px-2 py-1 rounded-md text-sm transition transform hover:scale-110 ${darkMode
-                  ? 'bg-slate-700 text-yellow-300 hover:bg-slate-600'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                ? 'bg-slate-700 text-yellow-300 hover:bg-slate-600'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                 }`}
             >
               {darkMode ? '☀️' : '🌙'}
@@ -138,8 +101,8 @@ export default function MainPage() {
       <main className={`flex-1 ${responsiveClasses.container} ${showContent ? 'animate-fadeIn' : 'opacity-0'}`}>
         {/* Hero Section */}
         <section className={`text-center mb-10 ${deviceInfo.isDesktop ? 'p-10' : 'p-8'} rounded-2xl border ${darkMode
-            ? 'bg-gradient-to-br from-slate-900 to-cyan-900 border-cyan-700'
-            : 'bg-gradient-to-br from-blue-100 via-cyan-100 to-green-100 border-cyan-200'
+          ? 'bg-gradient-to-br from-slate-900 to-cyan-900 border-cyan-700'
+          : 'bg-gradient-to-br from-blue-100 via-cyan-100 to-green-100 border-cyan-200'
           } transition-colors animate-slideUp stagger-1 transform hover:-translate-y-1 hover:shadow-xl`}>
           <h2 className={`${responsiveClasses.heroText} font-bold mb-4 ${darkMode ? 'text-cyan-300' : 'text-blue-800'} animate-slideInScale`}>
             🌊 Clean Brahmaputra River
@@ -156,8 +119,8 @@ export default function MainPage() {
         <button
           onClick={() => navigate('/login')}
           className={`w-full py-5 mb-8 rounded-xl text-white font-bold text-xl transition transform hover:scale-105 active:scale-95 animate-slideUp stagger-2 ${darkMode
-              ? 'bg-gradient-to-r from-cyan-500 to-emerald-600 hover:from-cyan-600 hover:to-emerald-700'
-              : 'bg-gradient-to-r from-sky-500 to-emerald-500 hover:from-sky-600 hover:to-emerald-600'
+            ? 'bg-gradient-to-r from-cyan-500 to-emerald-600 hover:from-cyan-600 hover:to-emerald-700'
+            : 'bg-gradient-to-r from-sky-500 to-emerald-500 hover:from-sky-600 hover:to-emerald-600'
             }`}
         >
           🍃 Join the Movement
@@ -180,8 +143,8 @@ export default function MainPage() {
           <button
             onClick={() => navigate('/report')}
             className={`w-full py-4 rounded-xl text-white font-bold text-lg transition transform hover:scale-105 active:scale-95 animate-slideUp stagger-3 ${darkMode
-                ? 'bg-gradient-to-r from-sky-700 to-cyan-700 hover:from-sky-800 hover:to-cyan-800'
-                : 'bg-gradient-to-r from-sky-500 to-cyan-500 hover:from-sky-600 hover:to-cyan-600'
+              ? 'bg-gradient-to-r from-sky-700 to-cyan-700 hover:from-sky-800 hover:to-cyan-800'
+              : 'bg-gradient-to-r from-sky-500 to-cyan-500 hover:from-sky-600 hover:to-cyan-600'
               }`}
           >
             📸 Report Garbage
@@ -190,8 +153,8 @@ export default function MainPage() {
             <button
               onClick={() => navigate('/cleaner')}
               className={`w-full py-4 rounded-xl text-white font-bold text-lg transition transform hover:scale-105 active:scale-95 animate-slideUp stagger-4 ${darkMode
-                  ? 'bg-gradient-to-r from-emerald-700 to-teal-700 hover:from-emerald-800 hover:to-teal-800'
-                  : 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600'
+                ? 'bg-gradient-to-r from-emerald-700 to-teal-700 hover:from-emerald-800 hover:to-teal-800'
+                : 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600'
                 }`}
             >
               🧹 Join Cleanup
@@ -200,8 +163,8 @@ export default function MainPage() {
           <button
             onClick={() => navigate('/leaderboard')}
             className={`w-full py-4 rounded-xl text-white font-bold text-lg transition transform hover:scale-105 active:scale-95 animate-slideUp stagger-4 ${darkMode
-                ? 'bg-gradient-to-r from-blue-700 to-cyan-700 hover:from-blue-800 hover:to-cyan-800'
-                : 'bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600'
+              ? 'bg-gradient-to-r from-blue-700 to-cyan-700 hover:from-blue-800 hover:to-cyan-800'
+              : 'bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600'
               }`}
           >
             🏆 Leaderboard
@@ -209,8 +172,8 @@ export default function MainPage() {
           <button
             onClick={() => navigate('/analytics')}
             className={`w-full py-4 rounded-xl text-white font-bold text-lg transition transform hover:scale-105 active:scale-95 animate-slideUp stagger-4 ${darkMode
-                ? 'bg-gradient-to-r from-purple-700 to-pink-700 hover:from-purple-800 hover:to-pink-800'
-                : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
+              ? 'bg-gradient-to-r from-purple-700 to-pink-700 hover:from-purple-800 hover:to-pink-800'
+              : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
               }`}
           >
             📊 Analytics

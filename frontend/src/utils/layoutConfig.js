@@ -1,3 +1,5 @@
+import { useMemo } from 'react'
+
 // Layout configuration for different device types
 export const layoutConfig = {
     desktop: {
@@ -63,7 +65,32 @@ export const getLayoutConfig = (deviceInfo) => {
     return layoutConfig.mobile
 }
 
-// Responsive utility classes
+// Memoized hook for responsive utility classes
+export const useResponsiveClasses = (deviceInfo) => {
+    return useMemo(() => {
+        const config = getLayoutConfig(deviceInfo)
+
+        return {
+            container: `${config.maxWidth} mx-auto ${config.padding} w-full`,
+            statsGrid: `grid ${config.gridCols.stats} ${config.spacing}`,
+            actionsGrid: `grid ${config.gridCols.actions} ${config.spacing}`,
+            heroText: config.fontSize.hero,
+            headingText: config.fontSize.heading,
+            bodyText: config.fontSize.body,
+            spacing: config.spacing
+        }
+    }, [deviceInfo.isDesktop, deviceInfo.isTablet, deviceInfo.isMobile])
+}
+
+// Memoized hook for animation configuration
+export const useAnimationConfig = (deviceInfo) => {
+    return useMemo(() => {
+        const config = getLayoutConfig(deviceInfo)
+        return config.animation
+    }, [deviceInfo.isDesktop, deviceInfo.isTablet, deviceInfo.isMobile])
+}
+
+// Legacy exports for backward compatibility
 export const getResponsiveClasses = (deviceInfo) => {
     const config = getLayoutConfig(deviceInfo)
 
