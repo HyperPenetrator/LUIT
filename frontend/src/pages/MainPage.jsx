@@ -178,6 +178,24 @@ export default function MainPage() {
           >
             🧑‍⚕️ Health Agent Portal
           </button>
+          <button
+            onClick={() => navigate('/safe-sources')}
+            className={`w-full py-4 rounded-xl text-white font-bold text-lg transition transform hover:scale-105 active:scale-95 animate-slideUp stagger-4 ${darkMode
+              ? 'bg-gradient-to-r from-teal-700 to-cyan-700 hover:from-teal-800 hover:to-cyan-800'
+              : 'bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600'
+              }`}
+          >
+            💧 Safe Source Finder
+          </button>
+          <button
+            onClick={() => navigate('/labs')}
+            className={`w-full py-4 rounded-xl text-white font-bold text-lg transition transform hover:scale-105 active:scale-95 animate-slideUp stagger-4 ${darkMode
+              ? 'bg-gradient-to-r from-indigo-700 to-blue-700 hover:from-indigo-800 hover:to-blue-800'
+              : 'bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600'
+              }`}
+          >
+            🔬 Testing Lab Finder
+          </button>
         </div>
 
         {/* Analytics */}
@@ -226,17 +244,18 @@ export default function MainPage() {
             </div>
           </div>
         </section>
-      </main>
+      </main >
 
       {/* Footer */}
-      <footer className={`border-t ${darkMode ? 'border-slate-700 bg-slate-800' : 'border-blue-100 bg-white'} py-6 text-center transition-colors animate-slideUp`}>
+      < footer className={`border-t ${darkMode ? 'border-slate-700 bg-slate-800' : 'border-blue-100 bg-white'} py-6 text-center transition-colors animate-slideUp`
+      }>
         <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
           Made with 💙 by <span className={`font-bold ${darkMode ? 'text-cyan-400' : 'text-blue-600'}`}>LuitLabs</span>
         </p>
         <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-          © 2026 LUIT Team • Water Safety Mission
+          © 2026 LUIT Team • Water Safety Mission • <button onClick={() => navigate('/sms-simulator')} className="underline hover:text-blue-500">SMS Bot Demo</button>
         </p>
-      </footer>
-    </div>
+      </footer >
+    </div >
   )
 }

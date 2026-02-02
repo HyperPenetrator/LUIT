@@ -15,6 +15,10 @@ const AdminDashboard = lazy(() => import('./pages/AdminDashboard'))
 const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'))
 const AlertsPage = lazy(() => import('./pages/AlertsPage'))
 const HealthAgentDashboard = lazy(() => import('./pages/HealthAgentDashboard'))
+const SMSBotPage = lazy(() => import('./pages/SMSBotPage'))
+const TestingLabsPage = lazy(() => import('./pages/TestingLabsPage'))
+const GuidancePage = lazy(() => import('./pages/GuidancePage'))
+const SafeSourcesPage = lazy(() => import('./pages/SafeSourcesPage'))
 
 // Loading fallback component
 const LoadingFallback = () => (
@@ -65,6 +69,10 @@ function App() {
           <Route path="/analytics" element={<AnalyticsPage />} />
           <Route path="/alerts" element={<AlertsPage />} />
           <Route path="/health-dashboard" element={<HealthAgentDashboard />} />
+          <Route path="/sms-simulator" element={<SMSBotPage />} />
+          <Route path="/labs" element={<TestingLabsPage />} />
+          <Route path="/guidance" element={<GuidancePage />} />
+          <Route path="/safe-sources" element={<SafeSourcesPage />} />
 
           {/* Admin Route */}
           <Route path="/admin" element={<AdminDashboard />} />

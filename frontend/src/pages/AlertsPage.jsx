@@ -142,8 +142,8 @@ const AlertsPage = () => {
                                         onClick={() => handleMarkAffected(alert.id)}
                                         disabled={affectedStatus[alert.id]}
                                         className={`py-3 rounded-2xl text-[10px] font-black uppercase transition ${affectedStatus[alert.id]
-                                                ? 'bg-green-500 text-white'
-                                                : (darkMode ? 'bg-slate-700 hover:bg-slate-600' : 'bg-slate-100 hover:bg-slate-200')
+                                            ? 'bg-green-500 text-white'
+                                            : (darkMode ? 'bg-slate-700 hover:bg-slate-600' : 'bg-slate-100 hover:bg-slate-200')
                                             }`}
                                     >
                                         {affectedStatus[alert.id] ? '✓ RECORDED' : "I'm Affected"}
@@ -159,6 +159,14 @@ const AlertsPage = () => {
                         ))}
                     </div>
                 )}
+                <div className="pt-8 pb-12">
+                    <button
+                        onClick={() => navigate('/safe-sources')}
+                        className="w-full py-5 bg-emerald-600 text-white font-black rounded-3xl uppercase tracking-tighter shadow-xl shadow-emerald-500/20 active:scale-95 transition"
+                    >
+                        💧 Find Nearest Safe Water Source
+                    </button>
+                </div>
             </main>
         </div>
     );

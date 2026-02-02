@@ -58,7 +58,7 @@ def root():
     return {"message": "Welcome to LUIT API"}
 
 # Import routes
-from routes import auth, reporting, cleaning, analytics, location, admin, alerts, labs, safe_sources, guidance
+from routes import auth, reporting, cleaning, analytics, location, admin, alerts, labs, safe_sources, guidance, sms
 
 app.include_router(auth.router)
 app.include_router(reporting.router)
@@ -70,6 +70,7 @@ app.include_router(alerts.router)
 app.include_router(labs.router)
 app.include_router(safe_sources.router)
 app.include_router(guidance.router)
+app.include_router(sms.router)
 
 logger.info("✅ All routes registered")
 

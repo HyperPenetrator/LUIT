@@ -1,140 +1,139 @@
-import sys
-import os
+from services.firebase_service import init_firebase, get_firestore_client, add_document
+from google.cloud.firestore import GeoPoint
 from datetime import datetime, timedelta
 import random
 
-# Add parent directory to path to import services
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from services.firebase_service import get_firestore_client, add_document
-from google.cloud.firestore import GeoPoint
-
-def seed_data():
+def seed_demo_data():
     db = get_firestore_client()
-    print("🚀 Seeding LUIT Water Contamination Data for Guwahati...")
+    print("🚀 Seeding Majuli Demo Data...")
 
-    # Guwahati Center approx: 26.1158, 91.7086
-    guwahati_locations = [
-        {"name": "Dispur", "lat": 26.1433, "lon": 91.7898},
-        {"name": "Paltan Bazaar", "lat": 26.1750, "lon": 91.7539},
-        {"name": "Maligaon", "lat": 26.1558, "lon": 91.7050},
-        {"name": "Hatigaon", "lat": 26.1250, "lon": 91.7800},
-        {"name": "Uzan Bazaar", "lat": 26.1880, "lon": 91.7550},
-        {"name": "Basistha", "lat": 26.1050, "lon": 91.7850},
-        {"name": "Azara", "lat": 26.1150, "lon": 91.6050},
-    ]
-
-    # 1. Seed waterReports
-    print("📝 Seeding waterReports...")
-    for loc in guwahati_locations:
-        report = {
-            "location": GeoPoint(loc["lat"], loc["lon"]),
-            "latitude": loc["lat"],
-            "longitude": loc["lon"],
-            "village": loc["name"],
-            "contaminationType": random.choice(["arsenic", "fluoride", "bacteria", "turbidity"]),
-            "waterSource": random.choice(["tubewell", "pond", "tap"]),
-            "severityLevel": random.choice(["caution", "unsafe", "critical"]),
-            "description": f"Concerned about water quality in {loc['name']}",
-            "imageUrl": "https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg",
-            "reportedBy": "system_gen",
-            "userName": "System User",
-            "reportedAt": (datetime.now() - timedelta(days=random.randint(0, 5))).isoformat(),
-            "affectedPopulation": random.randint(50, 500),
-            "status": "pending",
-            "verified": False,
-            "testResults": None
-        }
-        add_document("waterReports", report)
-
-    # 2. Seed alerts
-    print("🚨 Seeding alerts...")
-    alert = {
-        "triggerType": "automatic",
-        "contaminationType": "arsenic",
-        "affectedArea": {
-            "center": GeoPoint(26.1433, 91.7898),
-            "radius": 5000
-        },
-        "latitude": 26.1433,
-        "longitude": 91.7898,
-        "severityLevel": "critical",
-        "message": "High levels of Arsenic detected in Dispur area. Use alternative sources.",
-        "reportIds": [],
-        "createdAt": datetime.now().isoformat(),
-        "createdBy": "system",
-        "status": "active",
-        "affectedUsers": [],
-        "notificationsSent": 150
-    }
-    add_document("alerts", alert)
-
-    # 3. Seed testingLabs
-    print("🔬 Seeding testingLabs...")
+    # 1. Testing Labs
     labs = [
         {
-            "name": "Guwahati Public Health Laboratory",
-            "location": GeoPoint(26.1850, 91.7500),
-            "address": "Bamunimaidam, Guwahati",
-            "contact": {"phone": "0361-2550123", "email": "lab@assam.gov.in"},
-            "testsOffered": ["arsenic", "fluoride", "bacteria", "turbidity"],
-            "operatingHours": "9 AM - 5 PM",
-            "governmentApproved": True
+            "name": "Majuli District Water Testing Lab",
+            "location": GeoPoint(26.9550, 94.2200),
+            "address": "Kamalabari, Majuli, Assam 785104",
+            "contact": {"phone": "+91-3775-274001", "email": "majuli.waterlab@assam.gov.in"},
+            "testsOffered": ["arsenic", "fluoride", "bacteria", "turbidity", "pH", "iron"],
+            "operatingHours": "Mon-Sat 9:00 AM - 5:00 PM",
+            "governmentApproved": True,
+            "capacity": "High", "waitTime": "2-3 days"
         },
         {
-            "name": "Regional Water Quality Testing Center",
-            "location": GeoPoint(26.1400, 91.7900),
-            "address": "Dispur, Guwahati",
-            "contact": {"phone": "0361-2260456", "email": "regional_lab@assam.gov.in"},
-            "testsOffered": ["bacteria", "turbidity", "iron"],
-            "operatingHours": "10 AM - 4 PM",
-            "governmentApproved": True
+            "name": "PHED Mobile Testing Unit - Majuli",
+            "location": GeoPoint(26.9612, 94.2289),
+            "address": "Garamur, Majuli (Mobile Unit)",
+            "contact": {"phone": "+91-3775-274002"},
+            "testsOffered": ["arsenic", "fluoride", "bacteria", "turbidity"],
+            "operatingHours": "Tue, Thu, Sat 10:00 AM - 2:00 PM",
+            "governmentApproved": True,
+            "capacity": "Medium", "waitTime": "Same day"
         }
     ]
     for lab in labs:
-        add_document("testingLabs", lab)
+        db.collection("testingLabs").add(lab)
 
-    # 4. Seed safeSources
-    print("💧 Seeding safeSources...")
+    # 2. Safe Sources
     sources = [
         {
-            "location": GeoPoint(26.1500, 91.7300),
-            "sourceType": "Community Deep Tubewell",
-            "verifiedBy": "Public Health Engineering Dept",
-            "lastTestedDate": datetime.now().isoformat(),
-            "testResults": {"arsenic": 0.005, "bacteria": "absent"},
-            "status": "safe"
+            "name": "Kamalabari Community Deep Tubewell",
+            "location": GeoPoint(26.9480, 94.2150),
+            "type": "tubewell",
+            "lastTested": datetime.now().isoformat(),
+            "results": {"arsenic": "safe", "bacteria": "safe"},
+            "isGovernmentVerified": True
+        },
+        {
+            "name": "Garamur Satra Water Filter Plant",
+            "location": GeoPoint(26.9650, 94.2250),
+            "type": "plant",
+            "lastTested": datetime.now().isoformat(),
+            "results": {"arsenic": "safe", "bacteria": "safe"},
+            "isGovernmentVerified": True
         }
     ]
     for s in sources:
-        add_document("safeSources", s)
+        db.collection("safeSources").add(s)
 
-    # 5. Seed treatmentGuidance
-    print("📚 Seeding treatmentGuidance...")
-    guidance = [
+    # 3. Treatment Guidance
+    guidances = [
         {
-            "contaminationType": "bacteria",
-            "severity": "high",
-            "immediateActions": ["Boil water at least 1 minute", "Use chlorine tablets"],
-            "homeRemedies": ["Solar water disinfection (SODIS)", "Sand filters"],
-            "whenToSeekHelp": "If experiencing diarrhea, vomiting, or stomach pain.",
-            "emergencyContacts": ["108 (Ambulance)", "104 (Health Helpline)"],
-            "language": "en"
+            "contaminationType": "arsenic", "language": "en",
+            "immediateActions": ["Stop drinking immediately", "Do not use for cooking"],
+            "homeTreatment": "Use government-approved filters. Boiling does NOT help.",
+            "medicalAdvice": "Check for skin lesions."
         },
         {
-            "contaminationType": "arsenic",
-            "severity": "critical",
-            "immediateActions": ["Stop drinking contaminated water immediately", "Seek alternate source"],
-            "homeRemedies": ["Use Arsenic Removal Filter", "Rainwater harvesting"],
-            "whenToSeekHelp": "If you notice skin pigmentation changes or lesions.",
-            "emergencyContacts": ["District Collector Office"],
-            "language": "en"
+            "contaminationType": "bacteria", "language": "en",
+            "immediateActions": ["Boil water vigorously", "Use chlorination"],
+            "homeTreatment": "Boil for 10 minutes or use UV purification.",
+            "medicalAdvice": "Seek help for severe diarrhea."
         }
     ]
-    for g in guidance:
-        add_document("treatmentGuidance", g)
+    for g in guidances:
+        db.collection("treatmentGuidance").add(g)
 
-    print("✅ Seeding completed!")
+    # 4. Water Reports (Demo Cluster)
+    # Kamalabari Arsenic Cluster (3 reports)
+    for i in range(3):
+        report = {
+            "village": "Kamalabari",
+            "contaminationType": "arsenic",
+            "waterSource": "tubewell",
+            "severityLevel": "unsafe",
+            "latitude": 26.9500 + (random.random() * 0.01),
+            "longitude": 94.2200 + (random.random() * 0.01),
+            "reportedAt": (datetime.now() - timedelta(hours=i*2)).isoformat(),
+            "status": "pending",
+            "userName": f"Villager {i+1}",
+            "location": GeoPoint(26.9500, 94.2200)
+        }
+        db.collection("waterReports").add(report)
+
+    # Garamur Fluoride (2 reports)
+    for i in range(2):
+        report = {
+            "village": "Garamur",
+            "contaminationType": "fluoride",
+            "waterSource": "well",
+            "severityLevel": "caution",
+            "latitude": 26.9600 + (random.random() * 0.01),
+            "longitude": 94.2300 + (random.random() * 0.01),
+            "reportedAt": datetime.now().isoformat(),
+            "status": "pending",
+            "userName": f"Resident {i+1}"
+        }
+        db.collection("waterReports").add(report)
+
+    # Auniati Bacteria (1 critical)
+    db.collection("waterReports").add({
+        "village": "Auniati",
+        "contaminationType": "bacteria",
+        "waterSource": "pond",
+        "severityLevel": "critical",
+        "latitude": 26.9300,
+        "longitude": 94.2000,
+        "reportedAt": datetime.now().isoformat(),
+        "status": "pending",
+        "userName": "Concerned Citizen"
+    })
+
+    # 5. Pre-triggered Alerts
+    db.collection("alerts").add({
+        "contaminationType": "arsenic",
+        "severityLevel": "critical",
+        "status": "active",
+        "village": "Kamalabari",
+        "message": "URGENT: Arsenic cluster detected in Kamalabari. Avoid groundwater.",
+        "latitude": 26.9500,
+        "longitude": 94.2200,
+        "affectedArea": {"center": GeoPoint(26.9500, 94.2200), "radius": 5000},
+        "createdAt": datetime.now().isoformat(),
+        "triggerType": "automatic"
+    })
+
+    print("✅ Seeding Complete!")
 
 if __name__ == "__main__":
-    seed_data()
+    init_firebase()
+    seed_demo_data()
