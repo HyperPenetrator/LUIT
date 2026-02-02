@@ -1,43 +1,40 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Literal, Optional
-from services.image_verification import verify_garbage_image
-from services.location_service import check_duplicate_location
 from services.cloudinary_service import upload_image_to_cloudinary
-from services.firebase_service import add_document, query_documents, get_document
-from services.geofence_service import is_within_brahmaputra_geofence
+from services.firebase_service import add_document, get_document, get_firestore_client
+from services.alert_engine import check_and_trigger_alerts
 from datetime import datetime
+from google.cloud.firestore import GeoPoint
 
 router = APIRouter(prefix="/reporting", tags=["reporting"])
 
 class ReportRequest(BaseModel):
     latitude: float
     longitude: float
-    wasteType: Literal["plastic", "organic", "mixed", "toxic", "sewage"]
-    imageBase64: Optional[str] = None  # accepts base64 or legacy data URL
-    imageUrl: Optional[str] = None     # use when image already uploaded (e.g., Cloudinary URL)
+    village: str
+    contaminationType: Literal["arsenic", "fluoride", "bacteria", "turbidity", "other"]
+    waterSource: Literal["tubewell", "pond", "river", "tap", "well"]
+    severityLevel: Literal["safe", "caution", "unsafe", "critical"]
+    description: Optional[str] = None
+    imageBase64: Optional[str] = None
+    imageUrl: Optional[str] = None
     imagePublicId: Optional[str] = None
-    userId: Optional[str] = None
+    reportedBy: Optional[str] = None # userId
     userName: Optional[str] = None
-    userType: Optional[str] = "individual"  # individual, ngo, or anonymous
-
-class VerifyImageRequest(BaseModel):
-    image_base64: str
+    affectedPopulation: Optional[int] = 0
 
 class UploadImageRequest(BaseModel):
-    image_base64: str
-
-class DeleteImageRequest(BaseModel):
-    public_id: str
+    image_base_64: str
 
 @router.post("/upload-image")
 async def upload_image(request: UploadImageRequest):
     """Upload image to Cloudinary immediately"""
     try:
-        if not request.image_base64:
+        if not request.image_base_64:
             raise ValueError("No image data provided")
         
-        result = await upload_image_to_cloudinary(request.image_base64, folder="luit/reports")
+        result = await upload_image_to_cloudinary(request.image_base_64, folder="luit/water_reports")
         
         if not result['success']:
             raise ValueError(result['message'])
@@ -51,139 +48,69 @@ async def upload_image(request: UploadImageRequest):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Upload failed: {str(e)}")
 
-@router.post("/delete-image")
-async def delete_image(request: DeleteImageRequest):
-    """Delete image from Cloudinary if needed"""
-    try:
-        from services.cloudinary_service import delete_image_from_cloudinary
-        
-        result = await delete_image_from_cloudinary(request.public_id)
-        
-        if not result['success']:
-            raise ValueError(result['message'])
-        
-        return {
-            "success": True,
-            "message": "Image deleted successfully"
-        }
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Delete failed: {str(e)}")
-
-@router.post("/verify-image")
-async def verify_image(request: VerifyImageRequest):
-    """Verify if image contains garbage"""
-    try:
-        if not request.image_base64:
-            raise ValueError("No image data provided")
-        
-        result = await verify_garbage_image(request.image_base64)
-        
-        return result
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Image verification failed: {str(e)}")
-
-@router.post("/check-location")
-async def check_location(latitude: float, longitude: float):
-    """Check if location is already reported"""
-    try:
-        result = await check_duplicate_location(latitude, longitude)
-        return result
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-@router.get("/check-geofence")
-async def check_geofence(latitude: float, longitude: float):
-    """Check if location is within Brahmaputra geofence"""
-    try:
-        result = is_within_brahmaputra_geofence(latitude, longitude)
-        return result
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
 @router.post("/report")
 async def create_report(request: ReportRequest):
-    """Create new garbage report"""
+    """Create new water contamination report according to new schema"""
     try:
-        # Check geofence: must be within 2km of Brahmaputra River
-        geofence_check = is_within_brahmaputra_geofence(request.latitude, request.longitude)
-        if not geofence_check['allowed']:
-            return {"success": False, "message": geofence_check['message']}
-        
         # Resolve image source
-        image_url = None
-        image_public_id = None
+        image_url = request.imageUrl
+        image_public_id = request.imagePublicId
 
-        # Prefer explicit imageUrl from client (already uploaded)
-        if request.imageUrl:
-            image_url = request.imageUrl
-            image_public_id = request.imagePublicId
-        elif request.imageBase64:
-            # If a URL was sent in the imageBase64 field, accept it without re-uploading
+        if not image_url and request.imageBase64:
             if request.imageBase64.startswith("http"):
                 image_url = request.imageBase64
-                image_public_id = request.imagePublicId
             else:
-                # Verify garbage only when raw image data is provided
-                garbage_check = await verify_garbage_image(request.imageBase64)
-                if not garbage_check['is_garbage']:
-                    return {"success": False, "message": garbage_check['message']}
-                
-                # Auto-detect waste type from image if not provided
-                detected_waste_type = garbage_check.get('wasteType', 'mixed')
-                if not request.wasteType or request.wasteType == 'mixed':
-                    request.wasteType = detected_waste_type
-                
-                upload_result = await upload_image_to_cloudinary(request.imageBase64, folder="luit/reports")
-                if not upload_result['success']:
-                    return {"success": False, "message": upload_result['message']}
-                
-                image_url = upload_result['url']
-                image_public_id = upload_result['public_id']
-        else:
-            raise ValueError("No image provided for report")
+                upload_result = await upload_image_to_cloudinary(request.imageBase64, folder="luit/water_reports")
+                if upload_result['success']:
+                    image_url = upload_result['url']
+                    image_public_id = upload_result['public_id']
 
-        # Check for duplicate location
-        location_check = await check_duplicate_location(request.latitude, request.longitude)
-        if location_check['is_duplicate']:
-            return {"success": False, "message": "This location already reported"}
-        
-        # Save to Firestore
+        # Save to Firestore with new schema
         report_data = {
-            "latitude": request.latitude,
+            "location": GeoPoint(request.latitude, request.longitude),
+            "latitude": request.latitude, # keep flat for easy querying/UI
             "longitude": request.longitude,
-            "wasteType": request.wasteType,
+            "village": request.village,
+            "contaminationType": request.contaminationType,
+            "waterSource": request.waterSource,
+            "severityLevel": request.severityLevel,
+            "description": request.description,
             "imageUrl": image_url,
             "imagePublicId": image_public_id,
-            "userId": request.userId,
+            "reportedBy": request.reportedBy,
             "userName": request.userName or "Anonymous",
-            "userType": request.userType or "individual",
-            "createdAt": datetime.now().isoformat(),
-            "status": "active",  # active or cleaned
-            "verified": True
+            "reportedAt": datetime.now().isoformat(),
+            "affectedPopulation": request.affectedPopulation,
+            "status": "pending",
+            "verified": False,
+            "testResults": None
         }
         
         # Add to Firestore
-        report_id = add_document("reports", report_data)
+        report_id = add_document("waterReports", report_data)
+        
+        # Trigger alert engine
+        alert_id = await check_and_trigger_alerts(report_data)
         
         return {
             "success": True,
             "message": "Report submitted successfully",
             "reportId": report_id,
-            "points": 10,
-            "imageUrl": image_url
+            "alertTriggered": bool(alert_id),
+            "alertId": alert_id
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/reports")
-async def get_reports(wasteType: str = None, limit: int = 20):
-    """Get all reports, optionally filtered by waste type"""
+async def get_reports(contaminationType: str = None, limit: int = 20):
+    """Get all reports according to new schema"""
     try:
-        if wasteType:
-            reports = query_documents("reports", "wasteType", "==", wasteType)
+        from services.firebase_service import query_documents
+        if contaminationType:
+            reports = query_documents("waterReports", "contaminationType", "==", contaminationType)
         else:
-            # Get all active reports (would need to implement better querying)
-            reports = []
+            reports = [] # needs better query
         
         return {"success": True, "reports": reports[:limit]}
     except Exception as e:
@@ -193,10 +120,9 @@ async def get_reports(wasteType: str = None, limit: int = 20):
 async def get_report(reportId: str):
     """Get specific report details"""
     try:
-        report = get_document("reports", reportId)
+        report = get_document("waterReports", reportId)
         if not report:
             raise HTTPException(status_code=404, detail="Report not found")
-        # Include the document ID in the response
         report['id'] = reportId
         return {"success": True, "report": report}
     except Exception as e:

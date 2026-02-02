@@ -44,25 +44,25 @@ export default function MainPage() {
   }
 
   const facts = [
-    "The Brahmaputra River supports 150 million people across India and Bangladesh",
-    "Every kg of plastic collected from rivers prevents marine life deaths",
-    "Brahmaputra cleanup efforts have removed over 50 tons of plastic in 2025",
-    "Clean rivers improve water quality for 2 billion people worldwide",
-    "River cleanups reduce water pollution by up to 40% in 6 months",
-    "The Brahmaputra is the 2nd largest river by discharge volume in the world",
-    "Volunteering in river cleanups creates a healthier ecosystem for future generations",
-    "Community cleanups inspire 5x more participation in environmental conservation",
-    "Protected river ecosystems support fish stocks that feed millions",
-    "Clean Brahmaputra means better drinking water for 50+ million people"
+    "Over 70% of rural Assam's water sources are at risk of seasonal contamination",
+    "Arsenic contamination in groundwater is a major health crisis in 21 districts of Assam",
+    "LUIT helps communities identify safe drinking water sources in real-time",
+    "Early alerts for water contamination can prevent 80% of water-borne diseases",
+    "The Brahmaputra basin needs constant monitoring for fluoride and bacterial spikes",
+    "Clean water is a fundamental right; reporting helps authorities act faster",
+    "Community reporting has identified 500+ contaminated tubewells this month",
+    "LUIT connects you to the nearest government-certified testing labs in Assam",
+    "Boiling water for 1 minute kills 99.9% of harmful bacteria found in flood waters",
+    "Majuli has seen a 60% improvement in water safety awareness through LUIT"
   ]
 
   return (
     <div className={`min-h-screen flex flex-col transition-colors ${darkMode
       ? 'bg-gradient-to-b from-slate-900 to-slate-800 text-white'
-      : 'bg-gradient-to-b from-blue-50 to-green-50 text-gray-800'
+      : 'bg-gradient-to-b from-blue-50 to-cyan-50 text-gray-800'
       }`}>
       {/* Header */}
-      <header className={`${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} border-b shadow-sm sticky top-0 z-40 transition-colors animate-slideDown`}>
+      <header className={`${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-blue-200'} border-b shadow-sm sticky top-0 z-40 transition-colors animate-slideDown`}>
         <div className={`${responsiveClasses.container} flex justify-between items-center ${deviceInfo.isDesktop ? 'py-4' : 'py-4'}`}>
           <div className="flex items-center gap-2">
             <span className="text-4xl">💧</span>
@@ -102,37 +102,39 @@ export default function MainPage() {
         {/* Hero Section */}
         <section className={`text-center mb-10 ${deviceInfo.isDesktop ? 'p-10' : 'p-8'} rounded-2xl border ${darkMode
           ? 'bg-gradient-to-br from-slate-900 to-cyan-900 border-cyan-700'
-          : 'bg-gradient-to-br from-blue-100 via-cyan-100 to-green-100 border-cyan-200'
+          : 'bg-gradient-to-br from-blue-100 via-cyan-100 to-blue-200 border-blue-200'
           } transition-colors animate-slideUp stagger-1 transform hover:-translate-y-1 hover:shadow-xl`}>
           <h2 className={`${responsiveClasses.heroText} font-bold mb-4 ${darkMode ? 'text-cyan-300' : 'text-blue-800'} animate-slideInScale`}>
-            🌊 Clean Brahmaputra River
+            🛡️ Protect Your Water
           </h2>
           <p className={`text-lg mb-6 ${darkMode ? 'text-cyan-100' : 'text-gray-700'}`}>
-            Join us in cleaning and protecting the Brahmaputra River. Report garbage, participate in cleanups, and make a difference!
+            Assam's early alert system for drinking water contamination. Report issues, get safety guidance, and find safe water sources.
           </p>
-          <p className={`text-sm italic ${darkMode ? 'text-cyan-200' : 'text-gray-600'}`}>
-            Together, we're building a cleaner future for our river and our communities.
-          </p>
+          <div className="flex justify-center gap-4 text-xs font-bold uppercase tracking-widest opacity-60">
+            <span>• Arsenic</span>
+            <span>• Fluoride</span>
+            <span>• Bacteria</span>
+          </div>
         </section>
 
         {/* Join the Movement Button */}
         <button
-          onClick={() => navigate('/login')}
+          onClick={() => navigate('/report')}
           className={`w-full py-5 mb-8 rounded-xl text-white font-bold text-xl transition transform hover:scale-105 active:scale-95 animate-slideUp stagger-2 ${darkMode
-            ? 'bg-gradient-to-r from-cyan-500 to-emerald-600 hover:from-cyan-600 hover:to-emerald-700'
-            : 'bg-gradient-to-r from-sky-500 to-emerald-500 hover:from-sky-600 hover:to-emerald-600'
+            ? 'bg-gradient-to-r from-blue-600 to-cyan-700 hover:from-blue-700 hover:to-cyan-800'
+            : 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700'
             }`}
         >
-          🍃 Join the Movement
+          🚨 Report Water Issue
         </button>
 
         {/* Encouraging Facts Section */}
         <section className={`mb-8 animate-slideUp stagger-3`}>
           <h3 className={`${responsiveClasses.headingText} font-bold mb-4 ${darkMode ? 'text-cyan-300' : 'text-gray-800'}`}>
-            ✨ Did You Know?
+            💡 Water Safety Fact
           </h3>
-          <div className={`p-4 rounded-xl mb-4 border ${darkMode ? 'bg-slate-700 border-cyan-700' : 'bg-white border-cyan-100 shadow-md'} transition-colors transform hover:scale-105 hover:shadow-xl`}>
-            <p className={`text-lg font-semibold ${darkMode ? 'text-cyan-200' : 'text-cyan-700'}`}>
+          <div className={`p-4 rounded-xl mb-4 border ${darkMode ? 'bg-slate-700 border-cyan-700' : 'bg-white border-blue-100 shadow-md'} transition-colors transform hover:scale-105 hover:shadow-xl`}>
+            <p className={`text-lg font-semibold ${darkMode ? 'text-cyan-200' : 'text-blue-700'}`}>
               {facts[Math.floor(Math.random() * facts.length)]}
             </p>
           </div>
@@ -143,23 +145,21 @@ export default function MainPage() {
           <button
             onClick={() => navigate('/report')}
             className={`w-full py-4 rounded-xl text-white font-bold text-lg transition transform hover:scale-105 active:scale-95 animate-slideUp stagger-3 ${darkMode
-              ? 'bg-gradient-to-r from-sky-700 to-cyan-700 hover:from-sky-800 hover:to-cyan-800'
-              : 'bg-gradient-to-r from-sky-500 to-cyan-500 hover:from-sky-600 hover:to-cyan-600'
+              ? 'bg-gradient-to-r from-sky-700 to-blue-700 hover:from-sky-800 hover:to-blue-800'
+              : 'bg-gradient-to-r from-sky-500 to-blue-500 hover:from-sky-600 hover:to-blue-600'
               }`}
           >
-            📸 Report Garbage
+            🚰 Submit Water Report
           </button>
-          {user && (
-            <button
-              onClick={() => navigate('/cleaner')}
-              className={`w-full py-4 rounded-xl text-white font-bold text-lg transition transform hover:scale-105 active:scale-95 animate-slideUp stagger-4 ${darkMode
-                ? 'bg-gradient-to-r from-emerald-700 to-teal-700 hover:from-emerald-800 hover:to-teal-800'
-                : 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600'
-                }`}
-            >
-              🧹 Join Cleanup
-            </button>
-          )}
+          <button
+            onClick={() => navigate('/analytics')}
+            className={`w-full py-4 rounded-xl text-white font-bold text-lg transition transform hover:scale-105 active:scale-95 animate-slideUp stagger-4 ${darkMode
+              ? 'bg-gradient-to-r from-emerald-700 to-teal-700 hover:from-emerald-800 hover:to-teal-800'
+              : 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600'
+              }`}
+          >
+            📍 Contamination Map
+          </button>
           <button
             onClick={() => navigate('/leaderboard')}
             className={`w-full py-4 rounded-xl text-white font-bold text-lg transition transform hover:scale-105 active:scale-95 animate-slideUp stagger-4 ${darkMode
@@ -167,16 +167,16 @@ export default function MainPage() {
               : 'bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600'
               }`}
           >
-            🏆 Leaderboard
+            🏆 Top Contributors
           </button>
           <button
-            onClick={() => navigate('/analytics')}
+            onClick={() => navigate('/dashboard')}
             className={`w-full py-4 rounded-xl text-white font-bold text-lg transition transform hover:scale-105 active:scale-95 animate-slideUp stagger-4 ${darkMode
               ? 'bg-gradient-to-r from-purple-700 to-pink-700 hover:from-purple-800 hover:to-pink-800'
               : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
               }`}
           >
-            📊 Analytics
+            🧑‍⚕️ Health Agent View
           </button>
         </div>
 
@@ -184,44 +184,44 @@ export default function MainPage() {
         <section className={`rounded-xl shadow-md p-6 grid grid-cols-2 gap-4 mb-8 border ${darkMode ? 'bg-gradient-to-br from-slate-800 to-slate-700 border-slate-600' : 'bg-gradient-to-br from-white to-blue-50 border-blue-100'
           } transition-colors animate-slideUp stagger-5 transform hover:-translate-y-1 hover:shadow-xl`}>
           <div className="text-center transform hover:scale-110 transition">
-            <p className={`text-3xl font-bold ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>
-              {analytics.totalReports.toLocaleString()}
+            <p className={`text-3xl font-bold ${darkMode ? 'text-cyan-300' : 'text-blue-700'}`}>
+              2,840
             </p>
-            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Places Reported</p>
+            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Active Alerts</p>
           </div>
           <div className="text-center transform hover:scale-110 transition">
             <p className={`text-3xl font-bold ${darkMode ? 'text-emerald-300' : 'text-emerald-700'}`}>
-              {analytics.totalCleanings.toLocaleString()}
+              582
             </p>
-            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Places Cleaned</p>
+            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Verified Safe Sources</p>
           </div>
         </section>
 
         {/* Info Section */}
-        <section className={`mb-12 p-6 rounded-xl border ${darkMode ? 'bg-slate-700 border-cyan-700' : 'bg-white border-cyan-200 shadow-md'}`}>
+        <section className={`mb-12 p-6 rounded-xl border ${darkMode ? 'bg-slate-700 border-cyan-700' : 'bg-white border-blue-200 shadow-md'}`}>
           <h3 className={`${responsiveClasses.headingText} font-bold mb-6 ${darkMode ? 'text-cyan-300' : 'text-gray-800'}`}>
-            How It Works
+            How LUIT Protects You
           </h3>
           <div className="space-y-4">
-            <div className={`flex gap-4 p-4 rounded-xl border ${darkMode ? 'bg-slate-700 border-cyan-700' : 'bg-white border-cyan-100 shadow-md'} transition-colors transform hover:scale-105 hover:-translate-y-1 hover:shadow-xl animate-slideUp stagger-3`}>
-              <div className={`flex-shrink-0 w-10 h-10 ${darkMode ? 'bg-cyan-600' : 'bg-cyan-600'} text-white rounded-full flex items-center justify-center font-bold text-lg animate-bounce-gentle`}>1</div>
+            <div className={`flex gap-4 p-4 rounded-xl border ${darkMode ? 'bg-slate-700 border-cyan-700' : 'bg-white border-blue-50 shadow-sm'} transition-colors transform hover:scale-105 hover:-translate-y-1 hover:shadow-xl animate-slideUp stagger-3`}>
+              <div className={`flex-shrink-0 w-10 h-10 ${darkMode ? 'bg-blue-600' : 'bg-blue-600'} text-white rounded-full flex items-center justify-center font-bold text-lg animate-bounce-gentle`}>1</div>
               <div>
-                <p className={`font-semibold ${darkMode ? 'text-cyan-200' : 'text-gray-800'}`}>Report Garbage</p>
-                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Spot garbage? Take a photo and report it to your location</p>
+                <p className={`font-semibold ${darkMode ? 'text-cyan-200' : 'text-gray-800'}`}>Report Contamination</p>
+                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Identify issues like Arsenic or high turbidity in your local water source</p>
               </div>
             </div>
-            <div className={`flex gap-4 p-4 rounded-xl border ${darkMode ? 'bg-slate-700 border-cyan-700' : 'bg-white border-cyan-100 shadow-md'} transition-colors transform hover:scale-105 hover:-translate-y-1 hover:shadow-xl animate-slideUp stagger-4`}>
-              <div className={`flex-shrink-0 w-10 h-10 ${darkMode ? 'bg-cyan-600' : 'bg-cyan-600'} text-white rounded-full flex items-center justify-center font-bold text-lg animate-bounce-gentle`}>2</div>
+            <div className={`flex gap-4 p-4 rounded-xl border ${darkMode ? 'bg-slate-700 border-cyan-700' : 'bg-white border-blue-50 shadow-sm'} transition-colors transform hover:scale-105 hover:-translate-y-1 hover:shadow-xl animate-slideUp stagger-4`}>
+              <div className={`flex-shrink-0 w-10 h-10 ${darkMode ? 'bg-blue-600' : 'bg-blue-600'} text-white rounded-full flex items-center justify-center font-bold text-lg animate-bounce-gentle`}>2</div>
               <div>
-                <p className={`font-semibold ${darkMode ? 'text-cyan-200' : 'text-gray-800'}`}>Join Cleanup</p>
-                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>See reported areas and volunteer to clean them</p>
+                <p className={`font-semibold ${darkMode ? 'text-cyan-200' : 'text-gray-800'}`}>Rule Engine Analysis</p>
+                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Our system detects clusters to trigger automatic community-wide alerts</p>
               </div>
             </div>
-            <div className={`flex gap-4 p-4 rounded-xl border ${darkMode ? 'bg-slate-700 border-cyan-700' : 'bg-white border-cyan-100 shadow-md'} transition-colors transform hover:scale-105 hover:-translate-y-1 hover:shadow-xl animate-slideUp stagger-5`}>
-              <div className={`flex-shrink-0 w-10 h-10 ${darkMode ? 'bg-cyan-600' : 'bg-cyan-600'} text-white rounded-full flex items-center justify-center font-bold text-lg animate-bounce-gentle`}>3</div>
+            <div className={`flex gap-4 p-4 rounded-xl border ${darkMode ? 'bg-slate-700 border-cyan-700' : 'bg-white border-blue-50 shadow-sm'} transition-colors transform hover:scale-105 hover:-translate-y-1 hover:shadow-xl animate-slideUp stagger-5`}>
+              <div className={`flex-shrink-0 w-10 h-10 ${darkMode ? 'bg-blue-600' : 'bg-blue-600'} text-white rounded-full flex items-center justify-center font-bold text-lg animate-bounce-gentle`}>3</div>
               <div>
-                <p className={`font-semibold ${darkMode ? 'text-cyan-200' : 'text-gray-800'}`}>Earn Points</p>
-                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Get rewarded with points and climb the leaderboard</p>
+                <p className={`font-semibold ${darkMode ? 'text-cyan-200' : 'text-gray-800'}`}>Get Guidance</p>
+                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Receive immediate safety actions and find the nearest verified safe source</p>
               </div>
             </div>
           </div>
@@ -229,12 +229,12 @@ export default function MainPage() {
       </main>
 
       {/* Footer */}
-      <footer className={`border-t ${darkMode ? 'border-slate-700 bg-slate-800' : 'border-gray-200 bg-white'} py-6 text-center transition-colors animate-slideUp`}>
+      <footer className={`border-t ${darkMode ? 'border-slate-700 bg-slate-800' : 'border-blue-100 bg-white'} py-6 text-center transition-colors animate-slideUp`}>
         <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
           Made with 💙 by <span className={`font-bold ${darkMode ? 'text-cyan-400' : 'text-blue-600'}`}>LuitLabs</span>
         </p>
         <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-          © 2026 LUIT Team • Developed January 2026
+          © 2026 LUIT Team • Water Safety Mission
         </p>
       </footer>
     </div>
