@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLocationStore, useAuthStore } from '../store'
 import { reportingApi, guidanceApi } from '../api'
+import { savePendingReport } from '../utils/offlineStorage'
 
 export default function WaterReportPage() {
   const navigate = useNavigate()
@@ -157,9 +158,15 @@ export default function WaterReportPage() {
       }
       setStep(3)
     } catch (err) {
-      setError('Submission failed: ' + (err.response?.data?.detail || err.message))
+      if (!navigator.onLine) {
+        await savePendingReport(payload);
+        setSuccess('Offline! Report saved locally and will sync when online.');
+        setStep(3);
+      } else {
+        setError('Submission failed: ' + (err.response?.data?.detail || err.message))
+      }
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 

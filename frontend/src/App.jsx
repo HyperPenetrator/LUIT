@@ -30,57 +30,76 @@ const LoadingFallback = () => (
   </div>
 )
 
+import BottomNav from './components/BottomNav'
+import OfflineNotice from './components/OfflineNotice'
+import { useUIStore } from './store'
+import { useOfflineSync } from './hooks/useOfflineSync'
+
 function App() {
   const user = useAuthStore((state) => state.user)
   const userType = useAuthStore((state) => state.userType)
   const hydrated = useAuthStore((state) => state.hydrated)
+  const { fontSize, highContrast } = useUIStore()
+
+  // Initialize offline sync
+  useOfflineSync()
 
   if (!hydrated) return null
 
+  const rootClasses = `
+    min-h-screen transition-all duration-300 pb-24 md:pb-0
+    ${fontSize === 1.5 ? 'text-lg' : fontSize === 2 ? 'text-xl' : 'text-base'}
+    ${highContrast ? 'contrast-125 saturate-150 brightness-110' : ''}
+  `
+
   return (
     <Router>
-      <Suspense fallback={<LoadingFallback />}>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={user ? <Navigate to="/dashboard" /> : <MainPage />} />
-          <Route path="/login" element={user ? <Navigate to="/dashboard" /> : <LoginRegister />} />
-          <Route path="/report" element={<ReportingPage />} />
+      <div className={rootClasses}>
+        <OfflineNotice />
+        <Suspense fallback={<LoadingFallback />}>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={user ? <Navigate to="/dashboard" /> : <MainPage />} />
+            <Route path="/login" element={user ? <Navigate to="/dashboard" /> : <LoginRegister />} />
+            <Route path="/report" element={<ReportingPage />} />
 
-          {/* Protected User Routes */}
-          {user && userType === 'individual' && (
-            <>
-              <Route path="/dashboard" element={<UserDashboard />} />
-              <Route path="/cleaner" element={<CleanerPage />} />
-              <Route path="/cleaning/:reportId" element={<CleaningPage />} />
-            </>
-          )}
+            {/* Protected User Routes */}
+            {user && userType === 'individual' && (
+              <>
+                <Route path="/dashboard" element={<UserDashboard />} />
+                <Route path="/cleaner" element={<CleanerPage />} />
+                <Route path="/cleaning/:reportId" element={<CleaningPage />} />
+              </>
+            )}
 
-          {/* Protected NGO Routes */}
-          {user && userType === 'ngo' && (
-            <>
-              <Route path="/dashboard" element={<NgoDashboard />} />
-              <Route path="/cleaner" element={<CleanerPage />} />
-              <Route path="/cleaning/:reportId" element={<CleaningPage />} />
-            </>
-          )}
+            {/* Protected NGO Routes */}
+            {user && userType === 'ngo' && (
+              <>
+                <Route path="/dashboard" element={<NgoDashboard />} />
+                <Route path="/cleaner" element={<CleanerPage />} />
+                <Route path="/cleaning/:reportId" element={<CleaningPage />} />
+              </>
+            )}
 
-          {/* Leaderboard - Public */}
-          <Route path="/leaderboard" element={<LeaderboardPage />} />
-          <Route path="/analytics" element={<AnalyticsPage />} />
-          <Route path="/alerts" element={<AlertsPage />} />
-          <Route path="/health-dashboard" element={<HealthAgentDashboard />} />
-          <Route path="/sms-simulator" element={<SMSBotPage />} />
-          <Route path="/labs" element={<TestingLabsPage />} />
-          <Route path="/guidance" element={<GuidancePage />} />
-          <Route path="/safe-sources" element={<SafeSourcesPage />} />
+            {/* Leaderboard - Public */}
+            <Route path="/leaderboard" element={<LeaderboardPage />} />
+            <Route path="/analytics" element={<AnalyticsPage />} />
+            <Route path="/alerts" element={<AlertsPage />} />
+            <Route path="/health-dashboard" element={<HealthAgentDashboard />} />
+            <Route path="/sms-simulator" element={<SMSBotPage />} />
+            <Route path="/labs" element={<TestingLabsPage />} />
+            <Route path="/guidance" element={<GuidancePage />} />
+            <Route path="/safe-sources" element={<SafeSourcesPage />} />
 
-          {/* Admin Route */}
-          <Route path="/admin" element={<AdminDashboard />} />
+            {/* Admin Route */}
+            <Route path="/admin" element={<AdminDashboard />} />
 
-          {/* Catch all */}
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-      </Suspense>
+            {/* Catch all */}
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
+        </Suspense>
+        <BottomNav />
+      </div>
     </Router>
   )
 }

@@ -35,15 +35,28 @@ export const useLocationStore = create((set) => ({
   longitude: null,
   accuracy: null,
   lastUpdated: null,
-  
-  setLocation: (latitude, longitude, accuracy) => 
+
+  setLocation: (latitude, longitude, accuracy) =>
     set({ latitude, longitude, accuracy, lastUpdated: new Date() })
 }))
 
 export const useReportStore = create((set) => ({
   reports: [],
   selectedReport: null,
-  
+
   setReports: (reports) => set({ reports }),
   setSelectedReport: (report) => set({ selectedReport: report })
 }))
+
+export const useUIStore = create(
+  persist(
+    (set) => ({
+      fontSize: 1, // 1, 1.5, 2
+      highContrast: false,
+
+      setFontSize: (fontSize) => set({ fontSize }),
+      setHighContrast: (highContrast) => set({ highContrast })
+    }),
+    { name: 'ui-settings' }
+  )
+)
