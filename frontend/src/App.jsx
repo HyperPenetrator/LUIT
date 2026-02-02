@@ -20,6 +20,13 @@ const TestingLabsPage = lazy(() => import('./pages/TestingLabsPage'))
 const GuidancePage = lazy(() => import('./pages/GuidancePage'))
 const SafeSourcesPage = lazy(() => import('./pages/SafeSourcesPage'))
 
+// Water Quality Monitor Pages
+const WaterQualityHome = lazy(() => import('./pages/WaterQualityHome'))
+const WaterQualityReport = lazy(() => import('./pages/WaterQualityReport'))
+const WaterQualityLogin = lazy(() => import('./pages/WaterQualityLogin'))
+const PHCDashboard = lazy(() => import('./pages/PHCDashboard'))
+const WaterLabDashboard = lazy(() => import('./pages/WaterLabDashboard'))
+
 // Loading fallback component
 const LoadingFallback = () => (
   <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-50 to-green-50">
@@ -90,6 +97,13 @@ function App() {
             <Route path="/labs" element={<TestingLabsPage />} />
             <Route path="/guidance" element={<GuidancePage />} />
             <Route path="/safe-sources" element={<SafeSourcesPage />} />
+
+            {/* Water Quality Monitor Routes */}
+            <Route path="/water-quality" element={<WaterQualityHome />} />
+            <Route path="/water-quality/report" element={<WaterQualityReport />} />
+            <Route path="/water-quality/login" element={<WaterQualityLogin />} />
+            <Route path="/water-quality/phc-dashboard" element={<PHCDashboard />} />
+            <Route path="/water-quality/lab-dashboard" element={<WaterLabDashboard />} />
 
             {/* Admin Route */}
             <Route path="/admin" element={<AdminDashboard />} />
