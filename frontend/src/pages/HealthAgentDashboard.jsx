@@ -1,217 +1,250 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { alertsApi, reportingApi } from '../api';
-import { useAuthStore } from '../store';
+import { healthAgentApi, alertsApi } from '../api';
 
 const HealthAgentDashboard = () => {
     const navigate = useNavigate();
-    const user = useAuthStore((state) => state.user);
     const [darkMode, setDarkMode] = useState(() => JSON.parse(localStorage.getItem('darkMode') || 'false'));
-    const [activeAlerts, setActiveAlerts] = useState([]);
-    const [pendingReports, setPendingReports] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState('alerts');
+    const [activeTab, setActiveTab] = useState('overview');
 
-    // Manual Alert Form
-    const [showManualForm, setShowManualForm] = useState(false);
-    const [manualData, setManualData] = useState({
-        latitude: 26.1445, longitude: 91.7362,
-        contaminationType: 'arsenic', severityLevel: 'critical',
-        message: '', radius: 5000
-    });
+    // Data state
+    const [summary, setSummary] = useState({});
+    const [reports, setReports] = useState([]);
+    const [alerts, setAlerts] = useState([]);
+    const [analytics, setAnalytics] = useState({});
 
     useEffect(() => {
-        fetchData();
+        fetchDashboardData();
     }, []);
 
-    const fetchData = async () => {
+    const fetchDashboardData = async () => {
         try {
             setLoading(true);
-            const [alertsRes, reportsRes] = await Promise.all([
-                alertsApi.getAlerts(),
-                reportingApi.getReports()
-            ]);
-            setActiveAlerts(alertsRes.data.alerts || []);
-            // Filter only pending/unverified reports
-            setPendingReports((reportsRes.data.reports || []).filter(r => !r.verified));
+            const res = await healthAgentApi.getDashboard();
+            setSummary(res.data.summary);
+            setReports(res.data.reports);
+            setAlerts(res.data.alerts);
+            setAnalytics(res.data.analytics);
         } catch (err) {
-            console.error('Failed to sync health dashboard', err);
+            console.error('Master sync failed', err);
         } finally {
             setLoading(false);
         }
     };
 
-    const handleDismiss = async (alertId) => {
-        const reason = prompt("Enter reason for dismissal (e.g., False positive, Resolved):");
+    const handleVerify = async (id, status) => {
+        try {
+            await healthAgentApi.verifyReport(id, status);
+            fetchDashboardData();
+            alert(`Report ${status ? 'Verified' : 'Dismissed'}`);
+        } catch (err) { alert('Action failed'); }
+    };
+
+    const handleAlertDismiss = async (alertId) => {
+        const reason = prompt("Reason for dismissal?");
         if (!reason) return;
         try {
-            await alertsApi.dismissAlert(alert_id, reason);
-            setActiveAlerts(prev => prev.filter(a => a.id !== alertId));
-            alert('Alert dismissed.');
-        } catch (err) {
-            alert('Dismissal failed.');
-        }
+            await alertsApi.dismissAlert(alertId, reason);
+            fetchDashboardData();
+        } catch (err) { alert('Dismiss failed'); }
     };
 
-    const handleManualSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            await alertsApi.createManualAlert(manualData);
-            setShowManualForm(false);
-            fetchData();
-            alert('Manual alert broadcasted!');
-        } catch (err) {
-            alert('Broadcast failed.');
-        }
-    };
+    if (loading) return (
+        <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white font-black italic animate-pulse">
+            Establishing Secure Command Connection...
+        </div>
+    );
 
     return (
-        <div className={`min-h-screen transition-colors ${darkMode ? 'bg-slate-900 text-white' : 'bg-blue-50 text-slate-900'}`}>
-            <header className={`p-4 border-b sticky top-0 z-50 flex justify-between items-center ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-blue-100 shadow-sm'}`}>
-                <div className="flex items-center gap-3">
-                    <span className="text-3xl">🧑‍⚕️</span>
+        <div className={`min-h-screen transition-colors ${darkMode ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-800'}`}>
+            {/* Command Header */}
+            <header className={`p-4 border-b flex justify-between items-center ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200 shadow-xl z-50'}`}>
+                <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-black">HA</div>
                     <div>
-                        <h1 className="text-lg font-black text-blue-600">HEALTH AGENT COMMAND</h1>
-                        <p className="text-[10px] opacity-60 font-bold uppercase tracking-widest">Official Verification Portal</p>
+                        <h1 className="text-sm font-black uppercase tracking-tighter">Health Agent Command Center</h1>
+                        <p className="text-[10px] opacity-50 font-bold uppercase tracking-widest text-blue-500">Official Portal • District: Majuli</p>
                     </div>
                 </div>
-                <div className="flex gap-2">
-                    <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700">
-                        {darkMode ? '☀️' : '🌙'}
-                    </button>
-                    <button onClick={() => navigate('/')} className="text-xl">✕</button>
+                <div className="flex gap-3">
+                    <button onClick={() => setDarkMode(!darkMode)} className="p-2">{darkMode ? '☀️' : '🌙'}</button>
+                    <button onClick={() => navigate('/')} className="px-4 py-2 bg-slate-200 dark:bg-slate-700 rounded-lg text-xs font-bold uppercase">Exit</button>
                 </div>
             </header>
 
-            <main className="max-w-6xl mx-auto p-4 md:p-6 space-y-6">
-                {/* Stats Overview */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {[
-                        { label: 'Active Alerts', val: activeAlerts.length, color: 'text-red-500' },
-                        { label: 'Pending Verification', val: pendingReports.length, color: 'text-orange-500' },
-                        { label: 'Population Affected', val: activeAlerts.reduce((acc, a) => acc + (a.affectedUsers?.length || 0), 0), color: 'text-blue-500' },
-                        { label: 'Verified Sources', val: 582, color: 'text-green-500' },
-                    ].map(s => (
-                        <div key={s.label} className={`p-4 rounded-3xl border-2 ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-blue-100'}`}>
-                            <p className="text-[10px] font-bold opacity-50 uppercase">{s.label}</p>
-                            <p className={`text-2xl font-black ${s.color}`}>{s.val}</p>
-                        </div>
-                    ))}
-                </div>
+            <main className="max-w-7xl mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-4 gap-6">
 
-                {/* Tabs */}
-                <div className="flex border-b border-blue-200/20">
-                    {['alerts', 'reports', 'broadcast'].map(t => (
+                {/* Side Navigation */}
+                <aside className="lg:col-span-1 space-y-4">
+                    {['overview', 'map', 'reports', 'alerts', 'analytics'].map(tab => (
                         <button
-                            key={t}
-                            onClick={() => {
-                                if (t === 'broadcast') setShowManualForm(true);
-                                else { setActiveTab(t); setShowManualForm(false); }
-                            }}
-                            className={`px-6 py-3 text-xs font-bold uppercase transition-all border-b-2 ${(activeTab === t && !showManualForm) || (t === 'broadcast' && showManualForm)
-                                    ? 'border-blue-600 text-blue-600'
-                                    : 'border-transparent opacity-40'
-                                }`}
+                            key={tab}
+                            onClick={() => setActiveTab(tab)}
+                            className={`w-full text-left p-4 rounded-2xl text-xs font-black uppercase transition-all tracking-widest ${activeTab === tab ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'hover:bg-slate-200 dark:hover:bg-slate-800 opacity-60'}`}
                         >
-                            {t}
+                            {tab === 'overview' && '🏠 Dashboard'}
+                            {tab === 'map' && '📍 Intelligence Map'}
+                            {tab === 'reports' && '📝 Report Queue'}
+                            {tab === 'alerts' && '🚨 Active Alerts'}
+                            {tab === 'analytics' && '📊 Health Insights'}
                         </button>
                     ))}
-                </div>
 
-                {!showManualForm ? (
-                    <div className="space-y-4">
-                        {activeTab === 'alerts' ? (
-                            activeAlerts.map(alert => (
-                                <div key={alert.id} className={`p-5 rounded-3xl border-2 flex flex-col md:flex-row justify-between items-center gap-4 ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-blue-100'}`}>
-                                    <div className="space-y-1">
+                    <div className={`mt-10 p-6 rounded-3xl border-2 ${darkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-blue-50 border-blue-100'}`}>
+                        <h4 className="text-[10px] font-black uppercase opacity-40 mb-3">Today's Summary</h4>
+                        <div className="space-y-4">
+                            <div>
+                                <p className="text-2xl font-black text-red-500">{summary.activeAlerts}</p>
+                                <p className="text-[10px] font-bold opacity-60 uppercase">High Risk Alerts</p>
+                            </div>
+                            <div>
+                                <p className="text-2xl font-black text-orange-500">{summary.pendingVerification}</p>
+                                <p className="text-[10px] font-bold opacity-60 uppercase">Pending Review</p>
+                            </div>
+                            <div>
+                                <p className="text-2xl font-black text-blue-500">{summary.totalAffected}</p>
+                                <p className="text-[10px] font-bold opacity-60 uppercase">Citizens Affected</p>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+
+                {/* Content Area */}
+                <div className="lg:col-span-3 space-y-6">
+                    {activeTab === 'overview' && (
+                        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
+                            <h2 className="text-xl font-black italic uppercase">Operational Overview</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className={`p-8 rounded-3xl border-2 ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100 shadow-xl'}`}>
+                                    <span className="text-3xl mb-4 block">📢</span>
+                                    <h3 className="font-black uppercase mb-2">Broadcast Alert</h3>
+                                    <p className="text-xs opacity-60 mb-6">Manually trigger area-wide contamination alerts to the public via LUIT network.</p>
+                                    <button onClick={() => setActiveTab('alerts')} className="w-full py-3 bg-red-600 text-white rounded-xl text-[10px] font-black uppercase">Create New Alert</button>
+                                </div>
+                                <div className={`p-8 rounded-3xl border-2 ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100 shadow-xl'}`}>
+                                    <span className="text-3xl mb-4 block">🩺</span>
+                                    <h3 className="font-black uppercase mb-2">Verify Reports</h3>
+                                    <p className="text-xs opacity-60 mb-6">Review incoming citizen reports and confirm contamination with test results.</p>
+                                    <button onClick={() => setActiveTab('reports')} className="w-full py-3 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase">Review {summary.pendingVerification} Items</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'reports' && (
+                        <div className="space-y-4 animate-in fade-in">
+                            <h2 className="text-xl font-black italic uppercase">Incoming Report Queue</h2>
+                            {reports.map(r => (
+                                <div key={r.id} className={`p-6 rounded-3xl border-2 flex flex-col md:flex-row gap-6 items-start md:items-center ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100 shadow-sm'}`}>
+                                    <div className="w-20 h-20 bg-slate-200 dark:bg-slate-700 rounded-2xl flex-shrink-0 flex items-center justify-center text-3xl">
+                                        {r.imageUrl ? <img src={r.imageUrl} className="w-full h-full object-cover rounded-2xl" /> : '💧'}
+                                    </div>
+                                    <div className="flex-1 space-y-1">
                                         <div className="flex items-center gap-2">
-                                            <span className={`w-3 h-3 rounded-full ${alert.severityLevel === 'critical' ? 'bg-red-500' : 'bg-orange-500'} animate-pulse`}></span>
-                                            <h3 className="font-black uppercase text-sm">{alert.contaminationType} Alert</h3>
-                                            <span className="text-[9px] font-bold opacity-40">ID: {alert.id}</span>
+                                            <span className="px-2 py-0.5 bg-blue-100 text-blue-600 text-[9px] font-black rounded uppercase">{r.contaminationType}</span>
+                                            <span className="text-[10px] font-bold opacity-30">ID: {r.id.slice(-6)}</span>
                                         </div>
-                                        <p className="text-xs opacity-70 italic">"{alert.message}"</p>
-                                        <p className="text-[10px] font-bold text-blue-500 uppercase tracking-tighter">Loc: {alert.latitude.toFixed(4)}, {alert.longitude.toFixed(4)} | Radius: {alert.affectedArea.radius}m</p>
+                                        <h4 className="font-black text-lg uppercase">{r.village} - {r.waterSource}</h4>
+                                        <p className="text-xs opacity-60 italic">"{r.description || 'No description provided.'}"</p>
+                                        <p className="text-[9px] font-bold text-blue-500 mt-2 uppercase">Reported By: {r.userName} • {new Date(r.reportedAt).toLocaleString()}</p>
                                     </div>
                                     <div className="flex gap-2 w-full md:w-auto">
-                                        <button onClick={() => handleDismiss(alert.id)} className="flex-1 px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-700 text-[10px] font-bold uppercase transition hover:bg-red-500 hover:text-white">Dismiss</button>
-                                        <button className="flex-1 px-4 py-2 rounded-xl bg-blue-600 text-white text-[10px] font-bold uppercase hover:bg-blue-700">Deploy Response</button>
+                                        {!r.verified && (
+                                            <>
+                                                <button onClick={() => handleVerify(r.id, true)} className="flex-1 md:flex-none px-6 py-3 bg-emerald-500 text-white rounded-xl text-[10px] font-black uppercase">Verify</button>
+                                                <button onClick={() => handleVerify(r.id, false)} className="flex-1 md:flex-none px-6 py-3 bg-slate-200 dark:bg-slate-700 rounded-xl text-[10px] font-black uppercase">Dismiss</button>
+                                            </>
+                                        )}
+                                        {r.verified && <span className="text-xs font-black text-emerald-500 uppercase px-4">✓ Verified</span>}
                                     </div>
                                 </div>
-                            ))
-                        ) : (
-                            pendingReports.map(report => (
-                                <div key={report.id} className={`p-5 rounded-3xl border-2 flex gap-4 items-center ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-blue-100'}`}>
-                                    <div className="w-16 h-16 bg-slate-200 dark:bg-slate-700 rounded-2xl overflow-hidden flex-shrink-0">
-                                        {report.imageUrl ? <img src={report.imageUrl} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-xl">💧</div>}
+                            ))}
+                        </div>
+                    )}
+
+                    {activeTab === 'alerts' && (
+                        <div className="space-y-4 animate-in fade-in">
+                            <h2 className="text-xl font-black italic uppercase">Active Public Alerts</h2>
+                            {alerts.map(a => (
+                                <div key={a.id} className={`p-6 rounded-3xl border-2 border-red-500/20 ${darkMode ? 'bg-slate-800/50' : 'bg-red-50 shadow-sm'}`}>
+                                    <div className="flex justify-between items-start mb-4">
+                                        <div>
+                                            <h4 className="font-black text-lg uppercase text-red-600">{a.contaminationType} ALERT - {a.village}</h4>
+                                            <p className="text-xs font-bold opacity-60 mt-1">{a.message}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-xl font-black text-red-600">{a.affectedUsers?.length || 0}</p>
+                                            <p className="text-[9px] font-black uppercase opacity-40">Marked Affected</p>
+                                        </div>
                                     </div>
-                                    <div className="flex-1">
-                                        <p className="text-xs font-bold uppercase">{report.village}</p>
-                                        <p className="text-[10px] opacity-60 uppercase">{report.contaminationType} from {report.waterSource}</p>
-                                        <p className="text-[9px] mt-1 opacity-40">{new Date(report.reportedAt).toLocaleString()}</p>
+                                    <div className="flex gap-3">
+                                        <button onClick={() => handleAlertDismiss(a.id)} className="px-5 py-2.5 bg-white dark:bg-slate-800 border-2 border-red-200 text-red-600 rounded-xl text-[10px] font-black uppercase">Dismiss Alert</button>
+                                        <button className="px-5 py-2.5 bg-red-600 text-white rounded-xl text-[10px] font-black uppercase shadow-lg shadow-red-500/20">Log Action</button>
                                     </div>
-                                    <button className="px-4 py-2 rounded-xl bg-green-500 text-white text-[10px] font-black uppercase shadow-lg shadow-green-500/10">Verify</button>
                                 </div>
-                            ))
-                        )}
-                        {((activeTab === 'alerts' && activeAlerts.length === 0) || (activeTab === 'reports' && pendingReports.length === 0)) && (
-                            <div className="py-20 text-center opacity-30 italic text-sm">No items found for queue.</div>
-                        )}
-                    </div>
-                ) : (
-                    <form onSubmit={handleManualSubmit} className={`p-8 rounded-3xl border-2 space-y-4 max-w-2xl mx-auto shadow-2xl ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-blue-200'}`}>
-                        <h2 className="text-xl font-black text-blue-600 mb-4">BROADCAST MANUAL ALERT 🛰️</h2>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-bold uppercase opacity-50">Contamination</label>
-                                <select
-                                    value={manualData.contaminationType}
-                                    onChange={e => setManualData({ ...manualData, contaminationType: e.target.value })}
-                                    className={`w-full p-3 rounded-xl border ${darkMode ? 'bg-slate-700 border-slate-600' : 'bg-blue-50 border-blue-100'}`}
-                                >
-                                    <option value="arsenic">Arsenic</option>
-                                    <option value="fluoride">Fluoride</option>
-                                    <option value="bacteria">Bacteria</option>
-                                    <option value="turbidity">Turbidity</option>
-                                </select>
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-bold uppercase opacity-50">Severity</label>
-                                <select
-                                    value={manualData.severityLevel}
-                                    onChange={e => setManualData({ ...manualData, severityLevel: e.target.value })}
-                                    className={`w-full p-3 rounded-xl border ${darkMode ? 'bg-slate-700 border-slate-600' : 'bg-blue-50 border-blue-100'}`}
-                                >
-                                    <option value="critical">Critical</option>
-                                    <option value="unsafe">Unsafe</option>
-                                    <option value="caution">Caution</option>
-                                </select>
+                            ))}
+                        </div>
+                    )}
+
+                    {activeTab === 'analytics' && (
+                        <div className="space-y-6 animate-in fade-in">
+                            <h2 className="text-xl font-black italic uppercase">Epidemiological Intelligence</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className={`p-8 rounded-3xl border-2 ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100 shadow-xl'}`}>
+                                    <h4 className="text-[10px] font-black uppercase opacity-40 mb-6">Contamination Intensity</h4>
+                                    <div className="space-y-4">
+                                        {Object.entries(analytics.contaminationBreakdown || {}).map(([type, count]) => (
+                                            <div key={type}>
+                                                <div className="flex justify-between text-[10px] font-black uppercase mb-1">
+                                                    <span>{type}</span>
+                                                    <span>{count} Case(s)</span>
+                                                </div>
+                                                <div className="h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                                                    <div className="h-full bg-blue-500" style={{ width: `${(count / summary.totalReports) * 100}%` }}></div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className={`p-8 rounded-3xl border-2 ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100 shadow-xl'}`}>
+                                    <h4 className="text-[10px] font-black uppercase opacity-40 mb-4">Response Efficiency</h4>
+                                    <div className="text-center py-6">
+                                        <p className="text-4xl font-black text-blue-600">84%</p>
+                                        <p className="text-xs font-bold opacity-60 mt-2 uppercase">Verification Rate</p>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4 mt-4 border-t pt-6 border-slate-100 dark:border-slate-700">
+                                        <div className="text-center">
+                                            <p className="text-lg font-black italic">14m</p>
+                                            <p className="text-[9px] font-bold opacity-40 uppercase">Avg Response</p>
+                                        </div>
+                                        <div className="text-center">
+                                            <p className="text-lg font-black italic">5km</p>
+                                            <p className="text-[9px] font-bold opacity-40 uppercase">Safety Radius</p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div className="space-y-1">
-                            <label className="text-[10px] font-bold uppercase opacity-50">Message To Public</label>
-                            <textarea
-                                rows="3"
-                                placeholder="E.g., Tanker service deployed to Majuli. Test kits available at PHC..."
-                                value={manualData.message}
-                                onChange={e => setManualData({ ...manualData, message: e.target.value })}
-                                className={`w-full p-3 rounded-xl border ${darkMode ? 'bg-slate-700 border-slate-600' : 'bg-blue-50 border-blue-100'}`}
-                            />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-bold uppercase opacity-50">Latitude</label>
-                                <input type="number" step="0.0001" value={manualData.latitude} onChange={e => setManualData({ ...manualData, latitude: parseFloat(e.target.value) })} className={`w-full p-3 rounded-xl border ${darkMode ? 'bg-slate-700 border-slate-600' : 'bg-blue-50 border-blue-100'}`} />
+                    )}
+
+                    {activeTab === 'map' && (
+                        <div className="h-[600px] w-full bg-slate-200 dark:bg-slate-800 rounded-3xl border-4 border-blue-600/10 flex items-center justify-center relative overflow-hidden animate-in zoom-in-95">
+                            <div className="text-center space-y-2 z-10">
+                                <span className="text-5xl">🗺️</span>
+                                <p className="text-xs font-black uppercase opacity-40">Intelligence Map Active</p>
+                                <p className="text-[9px] font-bold opacity-20 italic">Layer: Public Water Reports + Active Clusters</p>
                             </div>
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-bold uppercase opacity-50">Longitude</label>
-                                <input type="number" step="0.0001" value={manualData.longitude} onChange={e => setManualData({ ...manualData, longitude: parseFloat(e.target.value) })} className={`w-full p-3 rounded-xl border ${darkMode ? 'bg-slate-700 border-slate-600' : 'bg-blue-50 border-blue-100'}`} />
-                            </div>
+                            {/* Marker Mocks */}
+                            {reports.map((r, i) => (
+                                <div key={i} className="absolute w-4 h-4 bg-blue-500 rounded-full border-2 border-white animate-bounce shadow-xl" style={{ top: `${30 + (i * 10) % 40}%`, left: `${20 + (i * 15) % 60}%` }}></div>
+                            ))}
+                            {alerts.map((a, i) => (
+                                <div key={i} className="absolute w-24 h-24 bg-red-500/20 rounded-full border-2 border-red-500 animate-pulse" style={{ top: '40%', left: '50%' }}></div>
+                            ))}
                         </div>
-                        <button type="submit" className="w-full py-5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl shadow-xl shadow-blue-600/20 transition-all uppercase tracking-widest mt-4">
-                            Broadcast Alert 📢
-                        </button>
-                    </form>
-                )}
+                    )}
+                </div>
             </main>
         </div>
     );

@@ -107,3 +107,11 @@ export const locationApi = {
   checkDuplicateLocation: (latitude, longitude, radius = 100) =>
     api.post('/location/check-duplicate', { latitude, longitude, radius })
 }
+
+// Health Agent endpoints
+export const healthAgentApi = {
+  getDashboard: () => api.get('/health-agent/dashboard'),
+  verifyReport: (reportId, verified) => api.post(`/health-agent/verify-report/${reportId}`, { verified }),
+  addTestResults: (reportId, data) => api.post('/health-agent/add-test-results', { report_id: reportId, test_results: data }),
+  logAction: (alertId, action) => api.post('/health-agent/log-action', { alert_id: alertId, action })
+}
