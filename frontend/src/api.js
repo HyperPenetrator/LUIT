@@ -52,9 +52,12 @@ export const reportingApi = {
 
 // Alerts endpoints
 export const alertsApi = {
-  getAlerts: (status = 'active') => api.get('/alerts', { params: { status } }),
+  getAlerts: (lat, lon, radius = 10000) => api.get('/alerts/active', { params: { lat, lon, radius } }),
   getAlert: (alertId) => api.get(`/alerts/${alertId}`),
-  updateStatus: (alertId, status) => api.patch(`/alerts/${alertId}/status`, { status })
+  createManualAlert: (data) => api.post('/alerts/create', data),
+  dismissAlert: (alertId, reason) => api.post(`/alerts/${alertId}/dismiss`, { reason }),
+  markAffected: (alertId, userId) => api.post(`/alerts/${alertId}/affected`, { user_id: userId }),
+  updateStatus: (alertId, status, extraData = {}) => api.patch(`/alerts/${alertId}/status`, { status, ...extraData })
 }
 
 // Testing Labs endpoints
@@ -103,4 +106,12 @@ export const locationApi = {
     api.get('/location/validate-coordinates', { params: { latitude, longitude } }),
   checkDuplicateLocation: (latitude, longitude, radius = 100) =>
     api.post('/location/check-duplicate', { latitude, longitude, radius })
+}
+
+// Health Agent endpoints
+export const healthAgentApi = {
+  getDashboard: () => api.get('/health-agent/dashboard'),
+  verifyReport: (reportId, verified) => api.post(`/health-agent/verify-report/${reportId}`, { verified }),
+  addTestResults: (reportId, data) => api.post('/health-agent/add-test-results', { report_id: reportId, test_results: data }),
+  logAction: (alertId, action) => api.post('/health-agent/log-action', { alert_id: alertId, action })
 }

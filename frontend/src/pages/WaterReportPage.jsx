@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLocationStore, useAuthStore } from '../store'
 import { reportingApi, guidanceApi } from '../api'
+import { savePendingReport } from '../utils/offlineStorage'
 
 export default function WaterReportPage() {
   const navigate = useNavigate()
@@ -157,9 +158,15 @@ export default function WaterReportPage() {
       }
       setStep(3)
     } catch (err) {
-      setError('Submission failed: ' + (err.response?.data?.detail || err.message))
+      if (!navigator.onLine) {
+        await savePendingReport(payload);
+        setSuccess('Offline! Report saved locally and will sync when online.');
+        setStep(3);
+      } else {
+        setError('Submission failed: ' + (err.response?.data?.detail || err.message))
+      }
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -231,8 +238,8 @@ export default function WaterReportPage() {
                     key={s.id}
                     onClick={() => setWaterSource(s.id)}
                     className={`p-3 rounded-2xl border-2 flex flex-col items-center transition active:scale-95 ${waterSource === s.id
-                        ? 'border-blue-500 bg-blue-500 text-white'
-                        : darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-blue-100'
+                      ? 'border-blue-500 bg-blue-500 text-white'
+                      : darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-blue-100'
                       }`}
                   >
                     <span className="text-2xl mb-1">{s.icon}</span>
@@ -251,8 +258,8 @@ export default function WaterReportPage() {
                     key={c.id}
                     onClick={() => setContaminationType(c.id)}
                     className={`p-4 rounded-2xl border-2 flex items-center gap-3 transition active:scale-95 ${contaminationType === c.id
-                        ? 'border-blue-500 bg-blue-500 text-white'
-                        : darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-blue-100'
+                      ? 'border-blue-500 bg-blue-500 text-white'
+                      : darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-blue-100'
                       }`}
                   >
                     <span className="text-2xl">{c.icon}</span>
@@ -415,13 +422,20 @@ export default function WaterReportPage() {
               </div>
             )}
 
-            <button
-              onClick={() => navigate('/')}
-              className={`w-full py-4 rounded-2xl font-bold ${darkMode ? 'bg-slate-800' : 'bg-slate-200'
-                }`}
-            >
-              Return to Home
-            </button>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => navigate('/labs')}
+                className="py-4 bg-blue-600 text-white font-bold rounded-2xl text-[10px] uppercase shadow-lg shadow-blue-500/20"
+              >
+                🔬 Find Testing Lab
+              </button>
+              <button
+                onClick={() => navigate('/')}
+                className={`py-4 rounded-2xl font-bold text-[10px] uppercase ${darkMode ? 'bg-slate-800' : 'bg-slate-200'}`}
+              >
+                Return Home
+              </button>
+            </div>
           </div>
         )}
       </main>

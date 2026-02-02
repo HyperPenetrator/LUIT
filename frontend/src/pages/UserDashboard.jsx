@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuthStore } from '../store'
+import { useAuthStore, useUIStore } from '../store'
 import { analyticsApi } from '../api'
 import useDeviceDetection from '../hooks/useDeviceDetection'
 import { getResponsiveClasses, getAnimationConfig } from '../utils/layoutConfig'
@@ -9,6 +9,7 @@ export default function UserDashboard() {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
   const logout = useAuthStore((state) => state.logout)
+  const { fontSize, setFontSize, highContrast, setHighContrast } = useUIStore()
   const deviceInfo = useDeviceDetection()
   const responsiveClasses = getResponsiveClasses(deviceInfo)
   const animationConfig = getAnimationConfig(deviceInfo)
@@ -236,6 +237,36 @@ export default function UserDashboard() {
             <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Total Cleanings</p>
           </div>
         </section>
+
+        {/* Accessibility Card */}
+        <div className={`p-6 rounded-3xl border-2 mb-8 ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-blue-100 shadow-xl'}`}>
+          <h3 className="text-xs font-black uppercase opacity-40 mb-4 tracking-widest">Accessibility Hub</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <p className="text-[10px] font-bold uppercase opacity-60 mb-2">Display Text Size</p>
+              <div className="flex gap-2">
+                {[1, 1.5, 2].map(size => (
+                  <button
+                    key={size}
+                    onClick={() => setFontSize(size)}
+                    className={`px-4 py-2 rounded-xl text-[10px] font-black border-2 transition ${fontSize === size ? 'bg-blue-600 border-blue-600 text-white' : 'border-slate-200'}`}
+                  >
+                    {size}X
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase opacity-60 mb-2">High Contrast Mode</p>
+              <button
+                onClick={() => setHighContrast(!highContrast)}
+                className={`w-full py-2 rounded-xl text-[10px] font-black border-2 transition ${highContrast ? 'bg-orange-500 border-orange-500 text-white' : 'border-slate-200'}`}
+              >
+                {highContrast ? 'ENABLED (CLICK TO DISABLE)' : 'DISABLED (CLICK TO ENABLE)'}
+              </button>
+            </div>
+          </div>
+        </div>
       </main>
 
       {/* Footer */}

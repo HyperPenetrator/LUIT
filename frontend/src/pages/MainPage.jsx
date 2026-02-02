@@ -143,13 +143,13 @@ export default function MainPage() {
         {/* Action Buttons */}
         <div className={`grid ${deviceInfo.isDesktop ? 'grid-cols-2' : 'grid-cols-1'} ${responsiveClasses.spacing} mb-8`}>
           <button
-            onClick={() => navigate('/report')}
+            onClick={() => navigate('/alerts')}
             className={`w-full py-4 rounded-xl text-white font-bold text-lg transition transform hover:scale-105 active:scale-95 animate-slideUp stagger-3 ${darkMode
-              ? 'bg-gradient-to-r from-sky-700 to-blue-700 hover:from-sky-800 hover:to-blue-800'
-              : 'bg-gradient-to-r from-sky-500 to-blue-500 hover:from-sky-600 hover:to-blue-600'
+              ? 'bg-gradient-to-r from-red-700 to-orange-700 hover:from-red-800 hover:to-orange-800'
+              : 'bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600'
               }`}
           >
-            🚰 Submit Water Report
+            🚨 View Live Alerts
           </button>
           <button
             onClick={() => navigate('/analytics')}
@@ -170,13 +170,31 @@ export default function MainPage() {
             🏆 Top Contributors
           </button>
           <button
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate('/health-dashboard')}
             className={`w-full py-4 rounded-xl text-white font-bold text-lg transition transform hover:scale-105 active:scale-95 animate-slideUp stagger-4 ${darkMode
               ? 'bg-gradient-to-r from-purple-700 to-pink-700 hover:from-purple-800 hover:to-pink-800'
               : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
               }`}
           >
-            🧑‍⚕️ Health Agent View
+            🧑‍⚕️ Health Agent Portal
+          </button>
+          <button
+            onClick={() => navigate('/safe-sources')}
+            className={`w-full py-4 rounded-xl text-white font-bold text-lg transition transform hover:scale-105 active:scale-95 animate-slideUp stagger-4 ${darkMode
+              ? 'bg-gradient-to-r from-teal-700 to-cyan-700 hover:from-teal-800 hover:to-cyan-800'
+              : 'bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600'
+              }`}
+          >
+            💧 Safe Source Finder
+          </button>
+          <button
+            onClick={() => navigate('/labs')}
+            className={`w-full py-4 rounded-xl text-white font-bold text-lg transition transform hover:scale-105 active:scale-95 animate-slideUp stagger-4 ${darkMode
+              ? 'bg-gradient-to-r from-indigo-700 to-blue-700 hover:from-indigo-800 hover:to-blue-800'
+              : 'bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600'
+              }`}
+          >
+            🔬 Testing Lab Finder
           </button>
         </div>
 
@@ -226,17 +244,18 @@ export default function MainPage() {
             </div>
           </div>
         </section>
-      </main>
+      </main >
 
       {/* Footer */}
-      <footer className={`border-t ${darkMode ? 'border-slate-700 bg-slate-800' : 'border-blue-100 bg-white'} py-6 text-center transition-colors animate-slideUp`}>
+      < footer className={`border-t ${darkMode ? 'border-slate-700 bg-slate-800' : 'border-blue-100 bg-white'} py-6 text-center transition-colors animate-slideUp`
+      }>
         <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
           Made with 💙 by <span className={`font-bold ${darkMode ? 'text-cyan-400' : 'text-blue-600'}`}>LuitLabs</span>
         </p>
         <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-          © 2026 LUIT Team • Water Safety Mission
+          © 2026 LUIT Team • Water Safety Mission • <button onClick={() => navigate('/sms-simulator')} className="underline hover:text-blue-500">SMS Bot Demo</button>
         </p>
-      </footer>
-    </div>
+      </footer >
+    </div >
   )
 }
