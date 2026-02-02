@@ -13,6 +13,8 @@ const CleaningPage = lazy(() => import('./pages/CleaningPage'))
 const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage'))
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'))
 const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'))
+const AlertsPage = lazy(() => import('./pages/AlertsPage'))
+const HealthAgentDashboard = lazy(() => import('./pages/HealthAgentDashboard'))
 
 // Loading fallback component
 const LoadingFallback = () => (
@@ -61,6 +63,8 @@ function App() {
           {/* Leaderboard - Public */}
           <Route path="/leaderboard" element={<LeaderboardPage />} />
           <Route path="/analytics" element={<AnalyticsPage />} />
+          <Route path="/alerts" element={<AlertsPage />} />
+          <Route path="/health-dashboard" element={<HealthAgentDashboard />} />
 
           {/* Admin Route */}
           <Route path="/admin" element={<AdminDashboard />} />
