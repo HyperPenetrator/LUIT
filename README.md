@@ -1,4 +1,4 @@
-# LUIT - Clean Brahmaputra River Platform
+# LUIT - Clean Brahmaputra River Platform (UI Idea #01)
 WEB LINK - https://luit.vercel.app/
 
 A web application for reporting and cleaning garbage in the Brahmaputra River.
